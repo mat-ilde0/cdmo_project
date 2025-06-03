@@ -19,7 +19,7 @@ else:
 # loading the base model using AMPL.eval()
 print("Loading base model...")
 ampl.eval("""
-    param N :=6;
+    param N := 8;
 
     set TEAMS = 1..N;
     set WEEKS = 1..N-1;
@@ -57,11 +57,17 @@ subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
     sum {i in TEAMS, j in TEAMS: i != j} x[i,j,p,w] = 1;
 """)
 
-
+# setting options
 ampl.option["solver"] = "highs"
+ampl.option['mp_options'] = 'lim:time=300'
 
-print("SOLVING...")
-output = ampl.solve(verbose=True, return_output=True)
-print("AMPL output:", output)
+
+print("\nSOLVING...")
+ampl.solve(verbose=True, return_output=True)
+
+solver_time = ampl.get_value("_solve_elapsed_time")
+print(f"Solver time: {solver_time:.3f} seconds")
+
+print("AMPL solve result:", ampl.get_solution(flat=False, zeros=False))
 assert ampl.solve_result == "solved"
 
