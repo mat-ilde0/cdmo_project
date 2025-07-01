@@ -2,3 +2,4 @@ minizinc
 z3-solver
 matplotlib
 amplpy
+python-dotenv

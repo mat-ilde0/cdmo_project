@@ -1,25 +1,52 @@
 import json
 import os
 import pandas as pd
-from amplpy import AMPL
+import re
+from amplpy import AMPL, modules
+import argparse
+from math import floor
+from dotenv import load_dotenv
+load_dotenv()
 
-license_path = os.getenv("AMPL_LICENSE_FILE")
-if license_path is not None:
+# execute from the root folder by running: python source/MIP/mip_model.py <N> <solver>
+# run with: python source/MIP/mip_model.py -h to see help
+
+uuid = os.getenv("AMPL_LICENSE_UUID")
+if uuid:
     ampl = AMPL()
-    ampl.set_option("license", license_path)
-    print("LICENSE: " + ampl.get_option("license"))
-else:
-    print("AMPL_LICENSE_FILE not set!")
-    ampl = AMPL()
 
-# loading instance data
-# ampl.read_data("params.dat")   # reads the value of N, the only instance parameter
+available_solvers = modules.installed()[1:]  # Skip the first element which is 'ampl'
 
-# loading the base model using AMPL.eval()
-# print("Loading base model...")
+# loading instance data from the parameter passed
+parser = argparse.ArgumentParser(description="Script to read two parameters")
+
+def check_N_range(value):
+    ivalue = int(value)
+    if ivalue < 0:
+        raise argparse.ArgumentTypeError(f"{value} is < 0")
+    return ivalue
+
+def check_solver_range(value):
+    ivalue = int(value)
+    if ivalue < 0 or ivalue > len(available_solvers) - 1:
+        raise argparse.ArgumentTypeError(f"{value} is not in range 0–{len(modules.installed()) - 2}")
+    return ivalue
+
+def get_solvers_help():
+    help_text = ""
+    for i, solver in enumerate(available_solvers):  # Skip the first element which is 'ampl'  
+        help_text += f"{i}: {solver}, "
+    return help_text[:-2]  # Remove the last comma and space
+
+parser.add_argument('N', type=check_N_range, help="N")
+parser.add_argument('solver', type=check_solver_range, help=get_solvers_help())
+
+args = parser.parse_args()
+
+ampl.eval(f"param N := {args.N};")
+
+# LOADING THE MODEL
 ampl.eval("""
-    param N := 6;
-
     set TEAMS = 1..N;
     set WEEKS = 1..N-1;
     set PERIODS = 1..N/2;
@@ -31,7 +58,7 @@ ampl.eval("""
     # Variables to capture absolute difference
     var home_away_diff {i in TEAMS} >= 0;
 
-    #minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
+    minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
           
     param game_value {i in TEAMS, j in TEAMS} := (i-1) * card(TEAMS) + j;
 """)
@@ -96,17 +123,16 @@ subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
 #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
 # """)
 
+solver = available_solvers[args.solver]
+mp_options_str = 'lim:time=300 report_times=1 tech:timing=2' #outlev=1
+if solver != 'cbc': mp_options_str += 'tech:threads=1'
+print(mp_options_str)
 
-# setting options
-ampl.option["solver"] = "gurobi"
-ampl.option['mp_options'] = 'lim:time=300 report_times=1 outlev=1'# outlev=1'
-ampl.option["presolve"] = 1
-ampl.option["show_stats"] = 1
-#ampl.option["times"] = 1
-
-# ampl.eval("""
-# ampl: display time_solver;  
-#           """)
+# SETTING OPTIONS
+ampl.option["solver"] = solver
+ampl.option['mp_options'] = mp_options_str
+ampl.option["presolve"] = 90
+#ampl.option["show_stats"] = 1
 
 
 instance = ampl.get_parameter("N").getValues().to_list()[0]
@@ -114,12 +140,8 @@ print("\nSOLVING Instance N =", instance)
 output = ampl.solve(verbose=True, return_output=True)
 print("AMPL solve output:", output)
 
-solver_time = ampl.get_value("_solve_elapsed_time")
+solver_time = ampl.get_value('_total_solve_time')
 print(f"Solver time: {solver_time:.3f} seconds")
-
-# preprocessing_time = ampl.getValue('time_conversion')
-# print(f"Preprocessing time: {preprocessing_time}")
-
 
 def get_solution():
     solution_dict = ampl.get_solution(flat=False, zeros=False)
@@ -137,13 +159,36 @@ def print_solution(sol_matrix):
     for row in sol_matrix:
         print(row)
 
-def create_solution_json(sol_matrix):
+def parse_timing_from_output(output):
+    # Parse timing from the output
+    timing_data = {}
+    
+    # Look for timing patterns in output
+    timing_patterns = {
+        'Setup time': r'Setup time = ([\d.]+)s',
+        'Solver time': r'Solver time = ([\d.]+)s', 
+        'Output time': r'Output time = ([\d.]+)s',
+        'Total time': r'Total time = ([\d.]+)s'
+    }
+    
+    for key, pattern in timing_patterns.items():
+        match = re.search(pattern, output)
+        if match:
+            timing_data[key] = float(match.group(1))
+    
+    return timing_data
+
+def create_solution_json(sol_matrix, output):
+    optimal = ampl.solve_result == "solved"
+    obj = ampl.get_objective('TotalImbalance')
+    time = floor(parse_timing_from_output(output)['Total time'])
+
     solution_result = {
-        "gurobi": {
+        solver: {
             "sol": sol_matrix,
-            # "time": # total time (presolving + solving),
-            # "optimal": a Boolean true iff the instance is solved for the decision version, or solved to optimality for the optimization version,
-            # "obj": objective function value
+            "time": time, # total time (presolving + solving),
+            "optimal": optimal, # a Boolean true iff the instance is solved for the decision version, or solved to optimality for the optimization version,
+            "obj": obj.value() # objective function value
         }
     }
     return solution_result
@@ -157,13 +202,16 @@ if ampl.solve_result == "solved":
     print_solution(get_solution())
 
     filename = f"res/MIP/{instance}.json"
-    try:
-        # Open the file in write mode ('w')
-        # Using 'indent=4' makes the JSON output human-readable with 4 space indentation
-        with open(filename, 'w') as json_file:
-            json.dump(create_solution_json(get_solution()), json_file, indent=4)
-        print(f"JSON file '{filename}' created successfully.")
-    except IOError as e:
-        print(f"Error writing to file {filename}: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    data = {}
+    if os.path.exists(filename):
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+        except Exception:
+            pass  # Skip if file is unreadable or empty
+
+    # Update and write
+    data.update(create_solution_json(get_solution(), output))
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
+    print(f"JSON file '{filename}' updated successfully.")

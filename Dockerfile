@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /app/requirements.txt
 RUN python3 -m pip install --upgrade pip && \
     pip install --break-system-packages -r /app/requirements.txt && \
-    python -m amplpy.modules install highs gurobi cbc gcg
+    python -m amplpy.modules install highs gurobi cbc cplex
 
 # Set working directory
 WORKDIR /cdmo
