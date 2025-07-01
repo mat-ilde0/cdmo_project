@@ -12,5 +12,6 @@ Once cloned the repo follow the following steps:
 3. Run `docker exec -it cdmo_solvers_container bash` to access a bash in the container
 8. `docker-compose down` when finished  
 
-
+### Check the solutions
+To check if all the produced solutions are valid run the command: `python source/solution_checker.py res/<folder_name>` where `<folder_name>` is the name of the folder containing the jsons relative to the computed solutions (e.g. `res/MIP`).
 

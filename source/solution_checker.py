@@ -3,6 +3,7 @@ from itertools import combinations
 import os
 import json
 import argparse
+import sys
 
 
 def get_elements(solution, list_condition_funct, n=None):
@@ -116,7 +117,6 @@ if __name__ == '__main__':
 
         for approach, result in json_data.items():
             sol = result.get("sol")
-            message = check_solution(sol)#, optional_constraint=False)
+            message = check_solution(sol)
             status = "VALID" if type(message) == str else "INVALID"
             print(f"Approach: {approach}\n  Status: {status}\n  Reason: {message if status == 'VALID' else '\n\t  '.join(message)}\n")
-

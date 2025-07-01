@@ -1,12 +1,11 @@
 # Base image
-FROM ubuntu:22.04
+FROM minizinc/minizinc:latest
 
 # Install system packages
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     build-essential \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python packages (minizinc via pip = portabile)
@@ -20,6 +19,7 @@ WORKDIR /cdmo
 
 # TODO-copy volumes before delivering the project
 ADD . .
+#COPY . .
 
 # Ensure run scripts are executable
 #RUN chmod +x run_model.sh run_all.sh

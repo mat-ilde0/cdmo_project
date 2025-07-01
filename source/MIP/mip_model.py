@@ -80,10 +80,10 @@ ampl.eval("""
 
 #print(ampl.get_parameter("game_value").get_values().to_list())
 
-ampl.eval("""
-subject to NoTeamPlaysItself {i in TEAMS, p in PERIODS, w in WEEKS}:
-    x[i,i,p,w] = 0;
-""")
+# ampl.eval("""
+# subject to NoTeamPlaysItself {i in TEAMS, p in PERIODS, w in WEEKS}:
+#     x[i,i,p,w] = 0;
+# """)
 
 # CONSTR 1: every team plays every other team exactly once
 ampl.eval("""
@@ -122,9 +122,9 @@ subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
 #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
 #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
 # """)
-
+time_limit = 10
 solver = available_solvers[args.solver]
-mp_options_str = 'lim:time=300 report_times=1 tech:timing=2' #outlev=1
+mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2'# outlev=1' 
 if solver != 'cbc': mp_options_str += 'tech:threads=1'
 print(mp_options_str)
 
@@ -134,16 +134,15 @@ ampl.option['mp_options'] = mp_options_str
 ampl.option["presolve"] = 90
 #ampl.option["show_stats"] = 1
 
-
 instance = ampl.get_parameter("N").getValues().to_list()[0]
-print("\nSOLVING Instance N =", instance)
+print("\nSOLVING Instance N = {} using {}".format(instance, solver))
 output = ampl.solve(verbose=True, return_output=True)
 print("AMPL solve output:", output)
 
-solver_time = ampl.get_value('_total_solve_time')
-print(f"Solver time: {solver_time:.3f} seconds")
+# solver_time = ampl.get_value('_total_solve_time')
+# print(f"Solver time: {solver_time:.3f} seconds")
 
-def get_solution():
+def get_solution_matrix():
     solution_dict = ampl.get_solution(flat=False, zeros=False)
     weeks = len(ampl.get_set("WEEKS").get_values().to_list())
     periods = len(ampl.get_set("PERIODS").get_values().to_list())
@@ -160,10 +159,8 @@ def print_solution(sol_matrix):
         print(row)
 
 def parse_timing_from_output(output):
-    # Parse timing from the output
     timing_data = {}
     
-    # Look for timing patterns in output
     timing_patterns = {
         'Setup time': r'Setup time = ([\d.]+)s',
         'Solver time': r'Solver time = ([\d.]+)s', 
@@ -181,37 +178,38 @@ def parse_timing_from_output(output):
 def create_solution_json(sol_matrix, output):
     optimal = ampl.solve_result == "solved"
     obj = ampl.get_objective('TotalImbalance')
-    time = floor(parse_timing_from_output(output)['Total time'])
-
+    time = floor(parse_timing_from_output(output)['Total time']) if optimal else 300
+    
     solution_result = {
         solver: {
-            "sol": sol_matrix,
+            "sol": sol_matrix if sol_matrix is not None else {},
             "time": time, # total time (presolving + solving),
             "optimal": optimal, # a Boolean true iff the instance is solved for the decision version, or solved to optimality for the optimization version,
             "obj": obj.value() # objective function value
         }
     }
+
+    print('RESULT:', solution_result)
     return solution_result
 
+sol_matrix = {}
 if ampl.solve_result == "solved":
-    sol = ampl.get_solution(flat=False, zeros=False)
-    #print(f"AMPL solve result: \n\n x: {sol['x']} \n\nhome_games:  {sol['home_games']} \n\n away_games: {sol['away_games']} \n\n home_away_diff: {sol['home_away_diff']}")
-    #print(sol["x"])
+    sol_matrix = get_solution_matrix()
 
-    print("\nSOLUTION:\n")
-    print_solution(get_solution())
+# sol = ampl.get_solution(flat=False, zeros=False)
+# print(f"AMPL solve result: \n\n x: {sol['x']} \n\nhome_games:  {sol['home_games']} \n\n away_games: {sol['away_games']} \n\n home_away_diff: {sol['home_away_diff']}")
 
-    filename = f"res/MIP/{instance}.json"
-    data = {}
-    if os.path.exists(filename):
-        try:
-            with open(filename, 'r') as f:
-                data = json.load(f)
-        except Exception:
-            pass  # Skip if file is unreadable or empty
+filename = f"res/MIP/{instance}.json"
+data = {}
+if os.path.exists(filename):
+    try:
+        with open(filename, 'r') as f:
+            data = json.load(f)
+    except Exception:
+        pass  
 
-    # Update and write
-    data.update(create_solution_json(get_solution(), output))
-    with open(filename, 'w') as f:
-        json.dump(data, f, indent=4)
-    print(f"JSON file '{filename}' updated successfully.")
+# Update and write
+data.update(create_solution_json(sol_matrix, output))
+with open(filename, 'w') as f:
+    json.dump(data, f, indent=4)
+print(f"JSON file '{filename}' updated successfully.")
