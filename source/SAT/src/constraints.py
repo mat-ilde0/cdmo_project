@@ -1,35 +1,55 @@
+from z3 import Or, Not, PbEq, PbLe, Bool
 from itertools import combinations
-from z3 import *
 
-def at_least_one(bool_vars):
-    return Or(bool_vars)
 
-def at_most_one(bool_vars):
-    return [Not(And(pair[0], pair[1])) for pair in combinations(bool_vars, 2)]
+def at_least_one(vars_):
+    return Or(vars_)
 
-def exactly_one(solver, bool_vars):
-    solver.add(at_least_one(bool_vars))
-    solver.add(*at_most_one(bool_vars))
+def at_most_one(vars_):
+    return PbLe([(v, 1) for v in vars_], 1)
 
-def add_at_most_one_match_per_slot(solver, match_vars, n, weeks, periods):
-    for w in range(weeks):
-        for p in range(periods):
-            vars_in_slot = []
-            for i in range(n):
-                for j in range(i + 1, n):
-                    vars_in_slot.append(match_vars[(i, j, w, p)])
-            solver.add(*at_most_one(vars_in_slot))
+def exactly_one(vars_):
+    return PbEq([(v, 1) for v in vars_], 1)
 
-def add_team_once_per_week(solver, match_vars, n, weeks, periods):
+
+
+def constraint_each_pair_once(s, M, n, W, P):
+    for i in range(n):
+        for j in range(i + 1, n):
+            s.add(exactly_one([M[(i, j, w, p)] for w in range(W) for p in range(P)]))
+
+def constraint_one_match_per_slot(s, M, n, W, P):
+    for w in range(W):
+        for p in range(P):
+            s.add(at_most_one([M[(i, j, w, p)]
+                               for i in range(n) for j in range(i + 1, n)]))
+
+def constraint_team_once_per_week(s, M, n, W, P):
     for t in range(n):
-        for w in range(weeks):
-            vars_for_team_week = []
-            for p in range(periods):
-                for opp in range(n):
-                    if opp == t:
-                        continue
-                    if t < opp:
-                        vars_for_team_week.append(match_vars[(t, opp, w, p)])
-                    else:
-                        vars_for_team_week.append(match_vars[(opp, t, w, p)])
-            solver.add(*at_most_one(vars_for_team_week))
+        for w in range(W):
+            s.add(at_most_one([M[(min(t,o), max(t,o), w, p)]
+                               for o in range(n) if o != t
+                               for p in range(P)]))
+
+
+
+def at_most_two_per_period(s, M, n, W, P):
+    for t in range(n):
+        for p in range(P):
+            lits = [(M[(min(t,o), max(t,o), w, p)], 1)
+                    for o in range(n) if o != t
+                    for w in range(W)]
+            s.add(PbLe(lits, 2))
+
+
+
+def add_simple_symmetry(s, M):
+    s.add(M[(0, 1, 0, 0)]) 
+    s.add(M[(0, 2, 1, 0)])  
+    
+def fix_first_round(solver, M, n, weeks, periods):
+    # week 0, period p: squadra 2p in casa, 2p+1 fuori
+    for p in range(periods):
+        i = 2*p
+        j = 2*p + 1
+        solver.add(M[(i, j, 0, p)])

@@ -1,54 +1,84 @@
-from z3 import *
-import itertools
-from constraints import * 
-# Let's start by defining the parameters
+import sys
+import os
+import time
+import json
+from constraints import *
+from z3 import Solver, Bool, sat, unknown, is_true
 
-n = 4
-weeks = n - 1
-periods = n//2
+def get_parameters(n):
+    if n % 2 != 0:
+        raise ValueError("n must be even")
+    return n, n - 1, n // 2
 
-# Initializing Z3 Solver
+def build_variables(n, weeks, periods):
+    M = {}
+    for i in range(n):
+        for j in range(i + 1, n):
+            for w in range(weeks):
+                for p in range(periods):
+                    M[(i, j, w, p)] = Bool(f"m_{i}_{j}_w{w}_p{p}")
+    return M
 
-solver = Solver()
-
-# Boolean Variables
-
-match_vars = {} # match_vars[i][j][w][p] = True if the team i plays against team j in week w period p
-
-for i in range(n):
-    for j in range(n):
-        if i == j:
-            continue
-        for w in range(weeks):
-            for p in range(periods):
-                var_name = f"match_{i}_{j}_w{w}_p{p}"
-                match_vars[(i, j, w, p)] = Bool(var_name)
-
-sample_var = match_vars[(0, 1, 0, 0)]
-print(f"Sample variable: {sample_var}")
-
-# Solving
-
-for i in range(n):
-    for j in range(i + 1, n):
-        vars_for_pair = [match_vars[(i, j, w, p)] for w in range(weeks) for p in range(periods)]
-        exactly_one(solver, vars_for_pair)  # add the constraint here
-
-# Constraint 2: At most one match per slot
-add_at_most_one_match_per_slot(solver, match_vars, n, weeks, periods)
-
-# Constraint 3: Each team plays at most once per week
-add_team_once_per_week(solver, match_vars, n, weeks, periods)
-
-result = solver.check()
-
-# Solve the problem
-if result == sat:
-    model = solver.model()
-    print("SOLUTION FOUND:\n")
-    for key, var in match_vars.items():
+def extract_solution(model, M, weeks, periods):
+    sol = [[None for _ in range(weeks)] for _ in range(periods)]
+    for (i, j, w, p), var in M.items():
         if is_true(model.evaluate(var)):
-            i, j, w, p = key
-            print(f"Week {w}, Period {p}: Team {i} vs Team {j}")
-else:
-    print("No solution found.")
+            sol[p][w] = [i + 1, j + 1]  
+    return sol
+
+def save_solution(sol, n, runtime_ms):
+    out_dir = "res/SAT"
+    os.makedirs(out_dir, exist_ok=True)
+    data = {
+        "SAT": {
+            "time": runtime_ms,
+            "optimal": True,
+            "obj": None,
+            "sol": sol
+        }
+    }
+    path = os.path.join(out_dir, f"n{n}.json")
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"✔ Solution saved to {path}")
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: python sat_sts.py <n>")
+        sys.exit(1)
+
+    n = int(sys.argv[1])
+    print(f"Solving STS for n = {n} teams…")
+    n, weeks, periods = get_parameters(n)
+
+    # build variables
+    match_vars = build_variables(n, weeks, periods)
+
+    # setup solver and also the timeout
+    solver = Solver()
+    solver.set(timeout=500000, random_seed=42)  
+    
+    # add constraints
+    constraint_each_pair_once   (solver, match_vars, n, weeks, periods)
+    constraint_one_match_per_slot(solver, match_vars, n, weeks, periods)
+    constraint_team_once_per_week(solver, match_vars, n, weeks, periods)
+    at_most_two_per_period      (solver, match_vars, n, weeks, periods)
+    add_simple_symmetry         (solver, match_vars)  
+    # solve
+    t0 = time.time()
+    res = solver.check()
+    elapsed_ms = int((time.time() - t0) * 1000)
+
+    # handle result
+    if res == sat:
+        model = solver.model()
+        sol = extract_solution(model, match_vars, weeks, periods)
+        print(f"SAT in {elapsed_ms/1000:.2f}s")
+        save_solution(sol, n, elapsed_ms)
+    elif res == unknown:
+        print(f"TIMEOUT after {elapsed_ms/1000:.2f}s")
+    else:
+        print(f"Unsatisfiable after {elapsed_ms/1000:.2f}s")
+
+if __name__ == "__main__":
+    main()
