@@ -1,15 +1,11 @@
 import json
 import os
-import pandas as pd
 import re
 from amplpy import AMPL, modules
 import argparse
 from math import floor
 from dotenv import load_dotenv
 load_dotenv()
-
-# execute from the root folder by running: python source/MIP/mip_model.py <N> <solver>
-# run with: python source/MIP/mip_model.py -h to see help
 
 uuid = os.getenv("AMPL_LICENSE_UUID")
 if uuid:
@@ -36,7 +32,7 @@ def get_solvers_help():
     help_text = ""
     for i, solver in enumerate(available_solvers):  # Skip the first element which is 'ampl'  
         help_text += f"{i}: {solver}, "
-    return help_text[:-2]  # Remove the last comma and space
+    return help_text[:-2] 
 
 parser.add_argument('N', type=check_N_range, help="N")
 parser.add_argument('solver', type=check_solver_range, help=get_solvers_help())
@@ -122,9 +118,10 @@ subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
 #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
 #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
 # """)
+
 time_limit = 10
 solver = available_solvers[args.solver]
-mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2'# outlev=1' 
+mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2 outlev=1' 
 if solver != 'cbc': mp_options_str += 'tech:threads=1'
 print(mp_options_str)
 
@@ -132,15 +129,11 @@ print(mp_options_str)
 ampl.option["solver"] = solver
 ampl.option['mp_options'] = mp_options_str
 ampl.option["presolve"] = 90
-#ampl.option["show_stats"] = 1
 
 instance = ampl.get_parameter("N").getValues().to_list()[0]
 print("\nSOLVING Instance N = {} using {}".format(instance, solver))
 output = ampl.solve(verbose=True, return_output=True)
 print("AMPL solve output:", output)
-
-# solver_time = ampl.get_value('_total_solve_time')
-# print(f"Solver time: {solver_time:.3f} seconds")
 
 def get_solution_matrix():
     solution_dict = ampl.get_solution(flat=False, zeros=False)

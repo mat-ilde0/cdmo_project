@@ -5,26 +5,28 @@ FROM minizinc/minizinc:latest
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \            
     build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/bin/python3 /usr/bin/python
 
-# Install Python packages (minizinc via pip = portabile)
+# Set environment variable to allow breaking system packages
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+# Install Python packages
 COPY requirements.txt /app/requirements.txt
-RUN python3 -m pip install --upgrade pip && \
-    pip install --break-system-packages -r /app/requirements.txt && \
-    python -m amplpy.modules install highs gurobi cbc cplex
+RUN pip install --break-system-packages -r /app/requirements.txt
+
+# Install AMPL solvers separately to avoid conflicts
+RUN python3 -m amplpy.modules install highs
+RUN python3 -m amplpy.modules install gurobi  
+RUN python3 -m amplpy.modules install cplex
 
 # Set working directory
 WORKDIR /cdmo
 
-# TODO-copy volumes before delivering the project
+# Copy application files
 ADD . .
-#COPY . .
-
-# Ensure run scripts are executable
-#RUN chmod +x run_model.sh run_all.sh
-COPY run_solver_in_container.sh /app/run_solver_in_container.sh
-RUN chmod +x /app/run_solver_in_container.sh
 
 # Default command
 CMD ["/bin/bash"]
