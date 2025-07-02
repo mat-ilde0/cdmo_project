@@ -9,7 +9,9 @@ load_dotenv()
 
 uuid = os.getenv("AMPL_LICENSE_UUID")
 if uuid:
+    modules.activate(uuid)
     ampl = AMPL()
+    print(ampl.get_option('version'))
 
 available_solvers = modules.installed()[1:]  # Skip the first element which is 'ampl'
 
@@ -106,6 +108,11 @@ subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
     sum {i in TEAMS, j in TEAMS: i != j} x[i,j,p,w] = 1;
 """)
 
+# ampl.eval("""
+# subject to PartialSymBreak :
+#    x[0,1,0,0] = 0;
+# """)
+
 # CONSTR 5 (symmetry breaking): lexicographical week ordering
 # ampl.eval("""
 # subject to LexicographicalWeekOrdering {w in WEEKS: w < card(WEEKS)}:
@@ -119,10 +126,10 @@ subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
 #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
 # """)
 
-time_limit = 10
+time_limit = 300
 solver = available_solvers[args.solver]
-mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2 outlev=1' 
-if solver != 'cbc': mp_options_str += 'tech:threads=1'
+mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2'# outlev=1' 
+if solver != 'cbc': mp_options_str += ' tech:threads=1'
 print(mp_options_str)
 
 # SETTING OPTIONS
