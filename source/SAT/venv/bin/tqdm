@@ -1,4 +1,4 @@
-#!/home/martinakenna/Desktop/SAT/venv/bin/python3
+#!/home/martinakenna/Desktop/cdmo_project/source/SAT/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

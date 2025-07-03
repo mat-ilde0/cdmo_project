@@ -3,7 +3,7 @@ import os
 import time
 import json
 from constraints import *
-from z3 import Solver, Bool, sat, unknown, is_true
+from z3 import *
 
 def get_parameters(n):
     if n % 2 != 0:
@@ -27,7 +27,7 @@ def extract_solution(model, M, weeks, periods):
     return sol
 
 def save_solution(sol, n, runtime_ms):
-    out_dir = "res/SAT"
+    out_dir = "../../res/SAT"
     os.makedirs(out_dir, exist_ok=True)
     data = {
         "SAT": {
@@ -56,29 +56,38 @@ def main():
 
     # setup solver and also the timeout
     solver = Solver()
-    solver.set(timeout=500000, random_seed=42)  
+    solver.set(timeout=300000, random_seed=42)
+    solver.set("phase_selection", 0)
+    solver.set("restart_strategy", 1)
+    solver.set("restart_factor", 1.5)
+    solver.set("case_split", 1)
     
     # add constraints
+    # Each team plays exactly once per week (not just "at most")
+
     constraint_each_pair_once   (solver, match_vars, n, weeks, periods)
     constraint_one_match_per_slot(solver, match_vars, n, weeks, periods)
     constraint_team_once_per_week(solver, match_vars, n, weeks, periods)
-    at_most_two_per_period      (solver, match_vars, n, weeks, periods)
-    add_simple_symmetry         (solver, match_vars)  
+    at_most_two_per_period_optimized(solver, match_vars, n, weeks, periods)
+    
+    add_simple_symmetry(solver, match_vars)
+    add_implied_constraints(solver, match_vars, n, weeks, periods)
     # solve
     t0 = time.time()
     res = solver.check()
-    elapsed_ms = int((time.time() - t0) * 1000)
-
+    elapsed_sec = time.time() - t0
     # handle result
     if res == sat:
         model = solver.model()
         sol = extract_solution(model, match_vars, weeks, periods)
-        print(f"SAT in {elapsed_ms/1000:.2f}s")
-        save_solution(sol, n, elapsed_ms)
+        runtime_sec = int(elapsed_sec)
+        print(f"SAT in {elapsed_sec:.2f}s")
+        save_solution(sol, n, runtime_sec)
     elif res == unknown:
-        print(f"TIMEOUT after {elapsed_ms/1000:.2f}s")
+        runtime_sec = 300
+        print(f"TIMEOUT after {elapsed_sec:.2f}s")
     else:
-        print(f"Unsatisfiable after {elapsed_ms/1000:.2f}s")
+        print(f"Unsatisfiable after {elapsed_sec:.2f}s")
 
 if __name__ == "__main__":
     main()

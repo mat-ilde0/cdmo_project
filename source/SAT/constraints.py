@@ -1,4 +1,4 @@
-from z3 import Or, Not, PbEq, PbLe, Bool
+from z3 import *
 from itertools import combinations
 
 
@@ -33,6 +33,9 @@ def constraint_team_once_per_week(s, M, n, W, P):
 
 
 
+def add_simple_symmetry(s, M):
+    s.add(M[(0, 1, 0, 0)])
+
 def at_most_two_per_period(s, M, n, W, P):
     for t in range(n):
         for p in range(P):
@@ -40,16 +43,38 @@ def at_most_two_per_period(s, M, n, W, P):
                     for o in range(n) if o != t
                     for w in range(W)]
             s.add(PbLe(lits, 2))
+            
 
+def at_most_two_per_period_optimized(s, M, n, W, P):
+    for t in range(n):
+        for p in range(P):
+            vars_tp = [M[(min(t,o), max(t,o), w, p)]
+                      for o in range(n) if o != t
+                      for w in range(W)]
+            
+            # Keep your original approach - it's likely optimal
+            s.add(PbLe([(v, 1) for v in vars_tp], 2))
 
-
-def add_simple_symmetry(s, M):
-    s.add(M[(0, 1, 0, 0)]) 
-    s.add(M[(0, 2, 1, 0)])  
+        
+def add_implied_constraints(s, M, n, W, P):
+    """
+    Add implied constraints that strengthen the model and help pruning
+    """
     
-def fix_first_round(solver, M, n, weeks, periods):
-    # week 0, period p: squadra 2p in casa, 2p+1 fuori
-    for p in range(periods):
-        i = 2*p
-        j = 2*p + 1
-        solver.add(M[(i, j, 0, p)])
+    # IMPLIED CONSTRAINT 1: Each team plays exactly once per week
+    # This strengthens your current "at most once per week" constraint
+    for t in range(n):
+        for w in range(W):
+            vars_tw = [M[(min(t,o), max(t,o), w, p)]
+                      for o in range(n) if o != t
+                      for p in range(P)]
+            s.add(exactly_one(vars_tw))
+    
+    # IMPLIED CONSTRAINT 2: Each week has exactly n/2 matches per period
+    # Since each period can have at most one match, and we have n/2 periods,
+    # each period must have exactly 1 match
+    for w in range(W):
+        for p in range(P):
+            vars_wp = [M[(i, j, w, p)]
+                      for i in range(n) for j in range(i + 1, n)]
+            s.add(exactly_one(vars_wp))
