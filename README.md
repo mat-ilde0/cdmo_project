@@ -30,3 +30,6 @@ To check if all the produced solutions are valid run the command: `python source
 ### Additional notes
 About MIP model, if you want to stop a solver before the time limit, open another terminal and run the command `pkill ampl`.
 
+
+/Users/matildesimonini/miniconda3/lib/python3.12/site-packages/ampl_module_base/bin/ampl.lic
+
