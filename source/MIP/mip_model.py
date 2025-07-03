@@ -49,7 +49,7 @@ ampl.eval("""
     set WEEKS = 1..N-1;
     set PERIODS = 1..N/2;
 
-    var x {i in TEAMS, j in TEAMS, p in PERIODS, w in WEEKS, i != j} binary >= 0, <= 1;
+    var x {i in TEAMS, j in TEAMS, p in PERIODS, w in WEEKS: i != j} binary;
     var home_games {i in TEAMS} integer >= 0, <= card(TEAMS);
     var away_games {i in TEAMS} integer >= 0, <= card(TEAMS);
     
@@ -58,27 +58,22 @@ ampl.eval("""
 
     minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
           
-    param game_value {i in TEAMS, j in TEAMS} := (i-1) * card(TEAMS) + j;
+    param game_value {i in TEAMS, j in TEAMS: i != j} := (i-1) * card(TEAMS) + j;
 """)
 
 # Constraints to define the absolute difference
 ampl.eval("""
     subject to HomeGames {i in TEAMS}:
-        home_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS, i != j} x[i,j,p,w];
+        home_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[i,j,p,w];
         
     subject to AwayGames {i in TEAMS}:
-        away_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS, i != j} x[j,i,p,w];
+        away_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[j,i,p,w];
           
     subject to HomeAwayDiff1 {i in TEAMS}:
         home_away_diff[i] >= home_games[i] - away_games[i];
 
     subject to HomeAwayDiff2 {i in TEAMS}:
         home_away_diff[i] >= away_games[i] - home_games[i];
-""")
-
-ampl.eval("""
-subject to NoTeamPlaysItself {i in TEAMS, p in PERIODS, w in WEEKS}:
-    x[i,i,p,w] = 0;
 """)
 
 # CONSTR 1: every team plays every other team exactly once

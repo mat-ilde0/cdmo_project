@@ -192,7 +192,7 @@
                 ]
             ]
         ],
-        "time": 3,
+        "time": 6,
         "optimal": true,
         "obj": 10.0
     },
@@ -586,7 +586,7 @@
                 ]
             ]
         ],
-        "time": 28,
+        "time": 49,
         "optimal": true,
         "obj": 10.0
     }
