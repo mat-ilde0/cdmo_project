@@ -1,20 +1,38 @@
 {
-    "cplex": {
+    "cplex_opt": {
         "sol": [],
         "time": 0,
         "optimal": true,
-        "obj": null
+        "obj": "None"
     },
-    "gurobi": {
+    "cplex_dec": {
         "sol": [],
         "time": 0,
         "optimal": true,
-        "obj": null
+        "obj": "None"
     },
-    "highs": {
+    "gurobi_opt": {
         "sol": [],
         "time": 0,
         "optimal": true,
-        "obj": null
+        "obj": "None"
+    },
+    "gurobi_dec": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_opt": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_dec": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
     }
 }

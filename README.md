@@ -21,14 +21,12 @@ Once cloned the repo follow the following steps:
 3. `minizinc source/CP/cp_model.mzn /data/CP/N.dzn --solver Gecode` where N is the instance number
 
 ### Run MIP model in the container
-**Run a single model on the specified instance**:
-    
-Once the container is running and you are inside a bash in it, run the command `python source/MIP/mip_model.py <N> <solver_index>` to run the MIP model on instance N and the specified index of the solver.  
-Run `python source/MIP/mip_model.py -h` to see a help message listing all the available MIP models.
+- **Run a single solver on the specified instance**:
+    Once the container is running and you are inside a bash in it, run the command `python source/MIP/mip_model.py <N> <solver_index> -o` to run the MIP model on instance N and the specified index of the solver. The flag `-o` is optional and if present, the optimised version will be solved.  
+    Run `python source/MIP/mip_model.py -h` to see a help message listing all the available MIP models.
 
-**Run all models on all instances**:
-    
-Once the container is running and you're inside a bash in it, run the command `python source/MIP/run_mip_models.py` to automatically run all the models on all the instances.
+- **Run all MIP solvers on all instances**:
+    Once the container is running and you're inside a bash in it, run the command `python source/MIP/mip_model.py -a` to automatically run all the solvers on all the instances.
 
 
 ### Check the solutions

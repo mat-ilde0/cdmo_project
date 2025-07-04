@@ -41,8 +41,11 @@ def get_solvers_help():
 parser.add_argument('N', type=check_N_range, nargs="?", help="N")
 parser.add_argument('solver', type=check_solver_range, nargs="?", help=get_solvers_help())
 parser.add_argument('-a', '--automatic', action='store_true', help="Run all N and solver combinations automatically")
+parser.add_argument("-o", "--optimise", action="store_true", help="Turn on optimisation mode")
 
 args = parser.parse_args()
+
+optimise = args.optimise # true if the -o/--optimise flag is passed
 
 if args.automatic:
     # user typed:  python mip_model.py -a
@@ -54,6 +57,8 @@ else:
     if args.N is None or args.solver is None:
         parser.error("Positional arguments N and solver are required unless -a/--automatic is used.")
     automatic = False
+
+
 
 # ----------------------------------------------------------------------------
 # Helper functions
@@ -91,17 +96,22 @@ def parse_timing_from_output(output):
     
     return timing_data
 
-def create_solution_json(solver, sol_matrix, output, solve_result):
+def create_solution_json(solver, sol_matrix, output, solve_result, optimise):
     optimal = solve_result in ("solved", "infeasible")
-    obj = ampl.get_objective('TotalImbalance').value() if solve_result not in ("limit", "infeasible", "?") else None
+    obj = 'None'
+    if optimise:
+        obj = ampl.get_objective('TotalImbalance').value() if solve_result not in ("limit", "infeasible", "?") else 'None'
     time = 0
-    if solve_result in ("solved", "solved?"):
+    if solve_result in ("solved", "solved?", "infeasible"):
         time = floor(parse_timing_from_output(output)['Total time'])
     elif solve_result in ("limit", "?"):
         time = 300
+
+    approach = '_opt' if optimise else '_dec'
+    key_name = solver +  approach
     
     solution_result = {
-        solver: {
+        key_name: {
             "sol": sol_matrix,
             "time": time, # total time (presolving + solving),
             "optimal": optimal, # a Boolean true iff the instance is solved for the decision version, or solved to optimality for the optimization version,
@@ -116,38 +126,44 @@ def create_solution_json(solver, sol_matrix, output, solve_result):
 # ----------------------------------------------------------------------------
 # The model
 # ----------------------------------------------------------------------------
-def load_model():
+def load_model(N:int, optimise: bool):
+    ampl.eval(f"param N := {N};")
     ampl.eval("""
         set TEAMS = 1..N;
         set WEEKS = 1..N-1;
         set PERIODS = 1..N/2;
 
         var x {i in TEAMS, j in TEAMS, p in PERIODS, w in WEEKS: i != j} binary;
-        var home_games {i in TEAMS} integer >= 0, <= card(TEAMS);
-        var away_games {i in TEAMS} integer >= 0, <= card(TEAMS);
-        
-        # Variables to capture absolute difference
-        var home_away_diff {i in TEAMS} >= 0;
-
-        minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
-            
-        # param game_value {i in TEAMS, j in TEAMS: i != j} := (i-1) * card(TEAMS) + j;
     """)
 
-    # Constraints to define the absolute difference
-    ampl.eval("""
-        subject to HomeGames {i in TEAMS}:
-            home_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[i,j,p,w];
+    
+    if optimise: 
+        ampl.eval("""
+            var home_games {i in TEAMS} integer >= 0, <= card(TEAMS);
+            var away_games {i in TEAMS} integer >= 0, <= card(TEAMS);
             
-        subject to AwayGames {i in TEAMS}:
-            away_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[j,i,p,w];
-            
-        subject to HomeAwayDiff1 {i in TEAMS}:
-            home_away_diff[i] >= home_games[i] - away_games[i];
+            # Variables to capture absolute difference
+            var home_away_diff {i in TEAMS} >= 0;
+        """)
 
-        subject to HomeAwayDiff2 {i in TEAMS}:
-            home_away_diff[i] >= away_games[i] - home_games[i];
-    """)
+        ampl.eval("""
+            minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
+        """)
+
+        # Constraints to define the absolute difference
+        ampl.eval("""
+            subject to HomeGames {i in TEAMS}:
+                home_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[i,j,p,w];
+                
+            subject to AwayGames {i in TEAMS}:
+                away_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[j,i,p,w];
+                
+            subject to HomeAwayDiff1 {i in TEAMS}:
+                home_away_diff[i] >= home_games[i] - away_games[i];
+
+            subject to HomeAwayDiff2 {i in TEAMS}:
+                home_away_diff[i] >= away_games[i] - home_games[i];
+        """)
 
     # CONSTR 1: every team plays every other team exactly once
     ampl.eval("""
@@ -180,19 +196,6 @@ def load_model():
         x[p, N + 1 - p, p, 1] = 1;
     """)
 
-    # CONSTR 5 (symmetry breaking): lexicographical week ordering
-    # ampl.eval("""
-    # subject to LexicographicalWeekOrdering {w in WEEKS: w < card(WEEKS)}:
-    #     sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
-    #     sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w+1]);
-    # """)
-
-    # ampl.eval("""
-    # subject to LexicographicalPeriodOrdering {p in PERIODS: p < card(PERIODS)}:
-    #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
-    #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
-    # """)
-
 # ----------------------------------------------------------------------------
 # Solver set up 
 # ----------------------------------------------------------------------------
@@ -209,10 +212,9 @@ solver_opt = {
     'highs_options': mp_options_str
 }
 
-def solve_instance(N: int, solver_idx: int) -> None:
+def solve_instance(N: int, solver_idx: int, optimise: bool) -> None:
     ampl.reset()                               # fresh model
-    ampl.eval(f"param N := {N};")
-    load_model()
+    load_model(N, optimise)
 
     solver_name = available_solvers[solver_idx]
     opt_name = opt_names[solver_name]
@@ -220,13 +222,18 @@ def solve_instance(N: int, solver_idx: int) -> None:
     ampl.option["solver"] = solver_name
     ampl.option[opt_name] = solver_opt[opt_name]
     ampl.option["presolve"] = 90
-    print(ampl.get_option(opt_name))
 
-    print(f"\nSOLVING N = {N} with {solver_name}")
+    version = "Optimization" if optimise else "Decision"
+
+    print('\n' + '-'*90)
+    print(f"SOLVING N = {N} with {solver_name} - {version}")
+    print(f'- Solver\'s options: {ampl.get_option(opt_name)}')
+
     output = ampl.solve(verbose=True, return_output=True)
     solve_result = ampl.solve_result
-    #print("AMPL solve output:", output)
-    print(solve_result)
+
+    print(f'***{solve_result}***')
+    print('-'*90 +'\n')
 
     # -------- save results exactly as you already do --------
     sol_matrix = {}
@@ -244,7 +251,7 @@ def solve_instance(N: int, solver_idx: int) -> None:
                     data = json.load(f)
             except Exception:
                 pass
-        data.update(create_solution_json(solver_name, sol_matrix, output, solve_result))
+        data.update(create_solution_json(solver_name, sol_matrix, output, solve_result, optimise))
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
 
@@ -256,6 +263,7 @@ if automatic:
     instances = range(4, 15, 2)               # 4,6,…,14
     for N in instances:
         for idx in range(len(available_solvers)):
-            solve_instance(N, idx)
+            solve_instance(N, idx, optimise=True)
+            solve_instance(N, idx, optimise=False)
 else:
-    solve_instance(args.N, args.solver)
+    solve_instance(args.N, args.solver, optimise)
