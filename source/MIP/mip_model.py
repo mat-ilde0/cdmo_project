@@ -11,11 +11,13 @@ uuid = os.getenv("AMPL_LICENSE_UUID")
 if uuid:
     modules.activate(uuid)
     ampl = AMPL()
-    # print(ampl.get_option('version'))
 
+# ----------------------------------------------------------------------------
+# Getting user parameters
+# ----------------------------------------------------------------------------
 available_solvers = modules.installed()[1:]  # Skip the first element which is 'ampl'
+automatic = False
 
-# loading instance data from the parameter passed
 parser = argparse.ArgumentParser(description="Script to read two parameters")
 
 def check_N_range(value):
@@ -36,120 +38,26 @@ def get_solvers_help():
         help_text += f"{i}: {solver}, "
     return help_text[:-2] 
 
-parser.add_argument('N', type=check_N_range, help="N")
-parser.add_argument('solver', type=check_solver_range, help=get_solvers_help())
+parser.add_argument('N', type=check_N_range, nargs="?", help="N")
+parser.add_argument('solver', type=check_solver_range, nargs="?", help=get_solvers_help())
+parser.add_argument('-a', '--automatic', action='store_true', help="Run all N and solver combinations automatically")
 
 args = parser.parse_args()
 
-ampl.eval(f"param N := {args.N};")
+if args.automatic:
+    # user typed:  python mip_model.py -a
+    if args.N is not None or args.solver is not None:
+        parser.error("-a/--automatic cannot be combined with N or solver.")
+    automatic = True
+else:
+    # user typed:  python mip_model.py N solver
+    if args.N is None or args.solver is None:
+        parser.error("Positional arguments N and solver are required unless -a/--automatic is used.")
+    automatic = False
 
-# LOADING THE MODEL
-ampl.eval("""
-    set TEAMS = 1..N;
-    set WEEKS = 1..N-1;
-    set PERIODS = 1..N/2;
-
-    var x {i in TEAMS, j in TEAMS, p in PERIODS, w in WEEKS: i != j} binary;
-    var home_games {i in TEAMS} integer >= 0, <= card(TEAMS);
-    var away_games {i in TEAMS} integer >= 0, <= card(TEAMS);
-    
-    # Variables to capture absolute difference
-    var home_away_diff {i in TEAMS} >= 0;
-
-    minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
-          
-    param game_value {i in TEAMS, j in TEAMS: i != j} := (i-1) * card(TEAMS) + j;
-""")
-
-# Constraints to define the absolute difference
-ampl.eval("""
-    subject to HomeGames {i in TEAMS}:
-        home_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[i,j,p,w];
-        
-    subject to AwayGames {i in TEAMS}:
-        away_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[j,i,p,w];
-          
-    subject to HomeAwayDiff1 {i in TEAMS}:
-        home_away_diff[i] >= home_games[i] - away_games[i];
-
-    subject to HomeAwayDiff2 {i in TEAMS}:
-        home_away_diff[i] >= away_games[i] - home_games[i];
-""")
-
-# CONSTR 1: every team plays every other team exactly once
-ampl.eval("""
-    subject to PlayOnlyOnce {i in TEAMS, j in TEAMS: i < j}:
-        sum {w in WEEKS, p in PERIODS} (x[i,j,p,w] + x[j,i,p,w]) = 1;
-""")
-
-# CONSTR 2: every team plays exactly one game per week
-ampl.eval("""
-    subject to OneGamePerWeek {i in TEAMS, w in WEEKS}:
-        sum {j in TEAMS: i != j} sum {p in PERIODS} (x[i,j,p,w] + x[j,i,p,w]) = 1;
-""")
-
-# CONSTR 3: every team plays at most twice per period
-ampl.eval("""
-
-subject to TwoGamesPerPeriod {i in TEAMS, p in PERIODS}:
-    sum {j in TEAMS: i != j} sum {w in WEEKS} (x[i,j,p,w] + x[j,i,p,w]) <= 2;
-""")
-
-# CONSTR 4: in every period there is at the most one match
-ampl.eval("""
-subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
-    sum {i in TEAMS, j in TEAMS: i != j} x[i,j,p,w] = 1;
-""")
-
-ampl.eval("""
-subject to CanonicalPairing {p in PERIODS}:
-    x[p, N + 1 - p, p, 1] = 1;
-""")
-
-# CONSTR 5 (symmetry breaking): lexicographical week ordering
-# ampl.eval("""
-# subject to LexicographicalWeekOrdering {w in WEEKS: w < card(WEEKS)}:
-#     sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
-#     sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w+1]);
-# """)
-
-# ampl.eval("""
-# subject to LexicographicalPeriodOrdering {p in PERIODS: p < card(PERIODS)}:
-#     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
-#     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
-# """)
-
-time_limit = 300
-mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2 tech:threads=1 ' #outlev=1'
-opt_names = {
-    'gurobi':'gurobi_options',
-    'cplex': 'cplex_options',
-    'highs': 'highs_options'
-} 
-solver_opt = {
-    'gurobi_options': mp_options_str + 'sol:count=0',
-    'cplex_options': mp_options_str + 'alg:barrier',
-    'highs_options': mp_options_str
-}
-
-solver = available_solvers[args.solver]
-
-# SETTING OPTIONS
-ampl.option["solver"] = solver
-opt_name = opt_names[solver]
-ampl.option[opt_name] = solver_opt[opt_name]
-print(ampl.get_option(opt_name))
-ampl.option["presolve"] = 90
-
-instance = ampl.get_parameter("N").getValues().to_list()[0]
-print("\nSOLVING Instance N = {} using {}".format(instance, solver))
-output = ampl.solve(verbose=True, return_output=True)
-print("AMPL solve output:", output)
-
-ampl.eval("""
-display solve_result_num, solve_result;
-""")
-
+# ----------------------------------------------------------------------------
+# Helper functions
+# ----------------------------------------------------------------------------
 def get_solution_matrix():
     solution_dict = ampl.get_solution(flat=False, zeros=False)
     weeks = len(ampl.get_set("WEEKS").get_values().to_list())
@@ -183,42 +91,171 @@ def parse_timing_from_output(output):
     
     return timing_data
 
-def create_solution_json(sol_matrix, output):
-    optimal = ampl.solve_result == "solved"
-    obj = ampl.get_objective('TotalImbalance')
-    time = floor(parse_timing_from_output(output)['Total time']) if optimal else 300
+def create_solution_json(solver, sol_matrix, output, solve_result):
+    optimal = solve_result in ("solved", "infeasible")
+    obj = ampl.get_objective('TotalImbalance').value() if solve_result not in ("limit", "infeasible", "?") else None
+    time = 0
+    if solve_result in ("solved", "solved?"):
+        time = floor(parse_timing_from_output(output)['Total time'])
+    elif solve_result in ("limit", "?"):
+        time = 300
     
     solution_result = {
         solver: {
             "sol": sol_matrix,
             "time": time, # total time (presolving + solving),
             "optimal": optimal, # a Boolean true iff the instance is solved for the decision version, or solved to optimality for the optimization version,
-            "obj": obj.value() # objective function value
+            "obj": obj # objective function value
         }
     }
 
     #print('RESULT:', solution_result)
     return solution_result
 
-sol_matrix = {}
-print(ampl.solve_result)
-if ampl.solve_result in ("solved", "solved?", "limit"):
-    sol_matrix = get_solution_matrix()
-    print_solution(sol_matrix)
 
-    # sol = ampl.get_solution(flat=False, zeros=False)
-    # print(f"AMPL solve result: \n\n x: {sol['x']} \n\nhome_games:  {sol['home_games']} \n\n away_games: {sol['away_games']} \n\n home_away_diff: {sol['home_away_diff']}")
+# ----------------------------------------------------------------------------
+# The model
+# ----------------------------------------------------------------------------
+def load_model():
+    ampl.eval("""
+        set TEAMS = 1..N;
+        set WEEKS = 1..N-1;
+        set PERIODS = 1..N/2;
 
-    filename = f"res/MIP/{instance}.json"
-    data = {}
-    if os.path.exists(filename):
-        try:
-            with open(filename, 'r') as f:
-                data = json.load(f)
-        except Exception:
-            pass  
+        var x {i in TEAMS, j in TEAMS, p in PERIODS, w in WEEKS: i != j} binary;
+        var home_games {i in TEAMS} integer >= 0, <= card(TEAMS);
+        var away_games {i in TEAMS} integer >= 0, <= card(TEAMS);
+        
+        # Variables to capture absolute difference
+        var home_away_diff {i in TEAMS} >= 0;
 
-    # Update and write
-    data.update(create_solution_json(sol_matrix, output))
-    with open(filename, 'w') as f:
-        json.dump(data, f, indent=4)
+        minimize TotalImbalance: sum {i in TEAMS} home_away_diff[i];
+            
+        # param game_value {i in TEAMS, j in TEAMS: i != j} := (i-1) * card(TEAMS) + j;
+    """)
+
+    # Constraints to define the absolute difference
+    ampl.eval("""
+        subject to HomeGames {i in TEAMS}:
+            home_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[i,j,p,w];
+            
+        subject to AwayGames {i in TEAMS}:
+            away_games[i] = sum {j in TEAMS, p in PERIODS, w in WEEKS: i != j} x[j,i,p,w];
+            
+        subject to HomeAwayDiff1 {i in TEAMS}:
+            home_away_diff[i] >= home_games[i] - away_games[i];
+
+        subject to HomeAwayDiff2 {i in TEAMS}:
+            home_away_diff[i] >= away_games[i] - home_games[i];
+    """)
+
+    # CONSTR 1: every team plays every other team exactly once
+    ampl.eval("""
+        subject to PlayOnlyOnce {i in TEAMS, j in TEAMS: i < j}:
+            sum {w in WEEKS, p in PERIODS} (x[i,j,p,w] + x[j,i,p,w]) = 1;
+    """)
+
+    # CONSTR 2: every team plays exactly one game per week
+    ampl.eval("""
+        subject to OneGamePerWeek {i in TEAMS, w in WEEKS}:
+            sum {j in TEAMS: i != j} sum {p in PERIODS} (x[i,j,p,w] + x[j,i,p,w]) = 1;
+    """)
+
+    # CONSTR 3: every team plays at most twice per period
+    ampl.eval("""
+
+    subject to TwoGamesPerPeriod {i in TEAMS, p in PERIODS}:
+        sum {j in TEAMS: i != j} sum {w in WEEKS} (x[i,j,p,w] + x[j,i,p,w]) <= 2;
+    """)
+
+    # CONSTR 4: in every period there is at the most one match
+    ampl.eval("""
+    subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
+        sum {i in TEAMS, j in TEAMS: i != j} x[i,j,p,w] = 1;
+    """)
+
+    # CONSTR: canonical pairing
+    ampl.eval("""
+    subject to CanonicalPairing {p in PERIODS}:
+        x[p, N + 1 - p, p, 1] = 1;
+    """)
+
+    # CONSTR 5 (symmetry breaking): lexicographical week ordering
+    # ampl.eval("""
+    # subject to LexicographicalWeekOrdering {w in WEEKS: w < card(WEEKS)}:
+    #     sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
+    #     sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w+1]);
+    # """)
+
+    # ampl.eval("""
+    # subject to LexicographicalPeriodOrdering {p in PERIODS: p < card(PERIODS)}:
+    #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
+    #     sum {w in WEEKS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p+1,w]);
+    # """)
+
+# ----------------------------------------------------------------------------
+# Solver set up 
+# ----------------------------------------------------------------------------
+time_limit = 300
+mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2 tech:threads=1 ' #outlev=1'
+opt_names = {
+    'gurobi':'gurobi_options',
+    'cplex': 'cplex_options',
+    'highs': 'highs_options'
+} 
+solver_opt = {
+    'gurobi_options': mp_options_str + 'sol:count=0',
+    'cplex_options': mp_options_str + 'alg:barrier',
+    'highs_options': mp_options_str
+}
+
+def solve_instance(N: int, solver_idx: int) -> None:
+    ampl.reset()                               # fresh model
+    ampl.eval(f"param N := {N};")
+    load_model()
+
+    solver_name = available_solvers[solver_idx]
+    opt_name = opt_names[solver_name]
+
+    ampl.option["solver"] = solver_name
+    ampl.option[opt_name] = solver_opt[opt_name]
+    ampl.option["presolve"] = 90
+    print(ampl.get_option(opt_name))
+
+    print(f"\nSOLVING N = {N} with {solver_name}")
+    output = ampl.solve(verbose=True, return_output=True)
+    solve_result = ampl.solve_result
+    #print("AMPL solve output:", output)
+    print(solve_result)
+
+    # -------- save results exactly as you already do --------
+    sol_matrix = {}
+    if solve_result in ("solved", "solved?", "limit", "infeasible", "?"):
+        if solve_result in ("limit", "infeasible", "?"):
+            sol_matrix = []
+        else:
+            sol_matrix = get_solution_matrix()
+
+        filename = f"res/MIP/{N}.json"
+        data = {}
+        if os.path.exists(filename):
+            try:
+                with open(filename) as f:
+                    data = json.load(f)
+            except Exception:
+                pass
+        data.update(create_solution_json(solver_name, sol_matrix, output, solve_result))
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=4)
+
+
+# ----------------------------------------------------------------------------
+# Solving
+# ----------------------------------------------------------------------------
+if automatic:
+    instances = range(4, 15, 2)               # 4,6,…,14
+    for N in instances:
+        for idx in range(len(available_solvers)):
+            solve_instance(N, idx)
+else:
+    solve_instance(args.N, args.solver)

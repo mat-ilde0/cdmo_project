@@ -1,4 +1,10 @@
 {
+    "cplex": {
+        "sol": [],
+        "time": 300,
+        "optimal": false,
+        "obj": null
+    },
     "gurobi": {
         "sol": [
             [
@@ -380,8 +386,14 @@
                 ]
             ]
         ],
-        "time": 171,
+        "time": 173,
         "optimal": true,
         "obj": 14.0
+    },
+    "highs": {
+        "sol": [],
+        "time": 300,
+        "optimal": false,
+        "obj": null
     }
 }
