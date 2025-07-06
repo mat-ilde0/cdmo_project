@@ -109,8 +109,9 @@ constraint
 constraint
   sum(t in TEAMS)(HA_abs[t]) < n+1;
 
-solve :: int_search([HA_abs[t] | t in TEAMS], first_fail, indomain_min, complete)
-       minimize sum(t in TEAMS)(HA_abs[t]);
+var int: Obj = sum(t in TEAMS)(HA_abs[t]);
+
+solve minimize Obj;
 
 %%%%% OUTPUT FORMATTING %%%%%
 
@@ -144,9 +145,7 @@ output [
     ++ "]" ++ if s < n div 2 then ",\n" else "\n" endif
   | s in SLOTS]),
   "    ],\n",
-  "    \"time\": 0.0,\n",
-  "    \"optimal\": false,\n",
-  "    \"obj\": \"None\"\n",
+  "    \"obj\": " ++ show(Obj) ++ "\n",
   "  }\n",
   "}\n"
 ];
