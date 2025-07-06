@@ -1,93 +1,146 @@
-import sys
-import os
-import time
-import json
-from constraints import *
+import sys, os, time, json, argparse, resource
 from z3 import *
+from constraints import *  # constraint encodings
 
+# ----------------------------------------------------------------------------
+# Parameters and Variable Setup
+# ----------------------------------------------------------------------------
 def get_parameters(n):
-    if n % 2 != 0:
-        raise ValueError("n must be even")
-    return n, n - 1, n // 2
+    if n % 2:
+        raise ValueError("N must be even")
+    return n, n - 1, n // 2  # n teams, W weeks, P periods
 
-def build_variables(n, weeks, periods):
-    M = {}
-    for i in range(n):
-        for j in range(i + 1, n):
-            for w in range(weeks):
-                for p in range(periods):
-                    M[(i, j, w, p)] = Bool(f"m_{i}_{j}_w{w}_p{p}")
-    return M
+def build_variables(n, W, P):
+    return {
+        (i, j, w, p): Bool(f"m_{i}_{j}_w{w}_p{p}")
+        for i in range(n)
+        for j in range(i + 1, n)
+        for w in range(W)
+        for p in range(P)
+    }
 
-def extract_solution(model, M, weeks, periods):
-    sol = [[None for _ in range(weeks)] for _ in range(periods)]
+# ----------------------------------------------------------------------------
+# Extracting, Printing and Saving Solutions
+# ----------------------------------------------------------------------------
+def extract_solution(model, M, W, P):
+    sol = [[None for _ in range(W)] for _ in range(P)]
     for (i, j, w, p), var in M.items():
         if is_true(model.evaluate(var)):
-            sol[p][w] = [i + 1, j + 1]  
+            sol[p][w] = [i + 1, j + 1]  # 1-based indexing
     return sol
 
-def save_solution(sol, n, runtime_ms):
+def print_solution(sol_matrix):
+    print("\n[Solution Matrix]")
+    for row in sol_matrix:
+        print(row)
+
+def save_solution_json(n, status, runtime_s, sol):
+    if status == 'sat':
+        time_val, optimal = runtime_s, True
+    elif status == 'unsat':
+        time_val, optimal = runtime_s, True
+    else:
+        time_val, optimal = 300, False  # timeout
+
+    entry = {
+        "time": time_val,
+        "optimal": optimal,
+        "obj": None,
+        "sol": sol
+    }
+
     out_dir = "../../res/SAT"
     os.makedirs(out_dir, exist_ok=True)
-    data = {
-        "SAT": {
-            "time": runtime_ms,
-            "optimal": True,
-            "obj": None,
-            "sol": sol
-        }
-    }
     path = os.path.join(out_dir, f"n{n}.json")
+
+    data = {}
+    if os.path.isfile(path):
+        with open(path) as f:
+            data = json.load(f)
+
+    data["SAT_dec"] = entry
     with open(path, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"✔ Solution saved to {path}")
+    print(f"✔ SAT_dec written to {path}")
 
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python sat_sts.py <n>")
-        sys.exit(1)
+# ----------------------------------------------------------------------------
+# Timing Helper
+# ----------------------------------------------------------------------------
+def get_time_info(start_time):
+    end_time = time.time()
+    usage = resource.getrusage(resource.RUSAGE_SELF)
+    return {
+        "Total time": round(end_time - start_time, 3),
+        "User CPU": round(usage.ru_utime, 3),
+        "System CPU": round(usage.ru_stime, 3)
+    }
 
-    n = int(sys.argv[1])
-    print(f"Solving STS for n = {n} teams…")
-    n, weeks, periods = get_parameters(n)
+# ----------------------------------------------------------------------------
+# Core Solving Routine
+# ----------------------------------------------------------------------------
+def solve_instance(n):
+    n, W, P = get_parameters(n)
+    print(f"\n{'-'*80}\n[INFO] Solving STS-SAT for N = {n} teams\n{'-'*80}")
 
-    # build variables
-    match_vars = build_variables(n, weeks, periods)
+    M = build_variables(n, W, P)
 
-    # setup solver and also the timeout
-    solver = Solver()
-    solver.set(timeout=300000, random_seed=42)
-    solver.set("phase_selection", 0)
-    solver.set("restart_strategy", 1)
-    solver.set("restart_factor", 1.5)
-    solver.set("case_split", 1)
-    
-    # add constraints
-    # Each team plays exactly once per week (not just "at most")
+    s = Solver()
+    s.set(timeout=300_000, random_seed=42)
 
-    constraint_each_pair_once   (solver, match_vars, n, weeks, periods)
-    constraint_one_match_per_slot(solver, match_vars, n, weeks, periods)
-    constraint_team_once_per_week(solver, match_vars, n, weeks, periods)
-    at_most_two_per_period_optimized(solver, match_vars, n, weeks, periods)
-    
-    add_simple_symmetry(solver, match_vars)
-    add_implied_constraints(solver, match_vars, n, weeks, periods)
-    # solve
+    # Constraints
+    constraint_each_pair_once(s, M, n, W, P)
+    constraint_one_match_per_slot(s, M, n, W, P)
+    constraint_team_once_per_week(s, M, n, W, P)
+    at_most_two_per_period_optimized(s, M, n, W, P)
+    add_simple_symmetry(s, M)
+    add_implied_constraints(s, M, n, W, P)
+    simple_rowcol_lex(s, M, n, W, P)
+
+    # Solve
     t0 = time.time()
-    res = solver.check()
-    elapsed_sec = time.time() - t0
-    # handle result
-    if res == sat:
-        model = solver.model()
-        sol = extract_solution(model, match_vars, weeks, periods)
-        runtime_sec = int(elapsed_sec)
-        print(f"SAT in {elapsed_sec:.2f}s")
-        save_solution(sol, n, runtime_sec)
-    elif res == unknown:
-        runtime_sec = 300
-        print(f"TIMEOUT after {elapsed_sec:.2f}s")
-    else:
-        print(f"Unsatisfiable after {elapsed_sec:.2f}s")
+    res = s.check()
+    timing = get_time_info(t0)
+    elapsed = int(timing["Total time"])
 
-if __name__ == "__main__":
-    main()
+    print("[Timing]")
+    for k, v in timing.items():
+        print(f"{k}: {v}s")
+
+    if res == sat:
+        sol = extract_solution(s.model(), M, W, P)
+        print_solution(sol)
+        save_solution_json(n, 'sat', elapsed, sol)
+    elif res == unsat:
+        print(f"[RESULT] UNSAT in {elapsed}s")
+        save_solution_json(n, 'unsat', elapsed, [])
+    else:
+        print(f"[RESULT] TIMEOUT after {elapsed}s")
+        save_solution_json(n, 'timeout', elapsed, [])
+
+# ----------------------------------------------------------------------------
+# CLI Argument Parsing
+# ----------------------------------------------------------------------------
+parser = argparse.ArgumentParser(
+    description="SAT (Z3) decision solver for the Sports Timetable Scheduling (STS) problem"
+)
+parser.add_argument('N', type=int, nargs='?',
+                    help='even number of teams (single instance)')
+parser.add_argument('-a', '--automatic', action='store_true',
+                    help='solve N = 4,6,...,14 in batch')
+parser.add_argument('-o', '--optimise', action='store_true',
+                    help='[ignored] optimization handled by MIP script')
+args = parser.parse_args()
+
+if args.optimise:
+    print('[INFO] -o/--optimise ignored: SAT model is decision-only.')
+
+# ----------------------------------------------------------------------------
+# Driver
+# ----------------------------------------------------------------------------
+if args.automatic:
+    for n in range(4, 15, 2):
+        solve_instance(n)
+else:
+    if args.N is None:
+        parser.error("Positional N required unless -a is used.")
+    solve_instance(args.N)
