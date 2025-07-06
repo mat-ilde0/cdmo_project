@@ -1,4 +1,4 @@
-import sys, os, time, json, argparse, resource
+import os, time, json, argparse, resource,gc
 from z3 import *
 from constraints import *  # constraint encodings
 
@@ -92,7 +92,6 @@ def solve_instance(n):
     constraint_one_match_per_slot(s, M, n, W, P)
     constraint_team_once_per_week(s, M, n, W, P)
     at_most_two_per_period_optimized(s, M, n, W, P)
-    add_simple_symmetry(s, M)
     add_implied_constraints(s, M, n, W, P)
     simple_rowcol_lex(s, M, n, W, P)
 
@@ -116,6 +115,9 @@ def solve_instance(n):
     else:
         print(f"[RESULT] TIMEOUT after {elapsed}s")
         save_solution_json(n, 'timeout', elapsed, [])
+    # Cleanup memory
+    del M, s
+    gc.collect()
 
 # ----------------------------------------------------------------------------
 # CLI Argument Parsing

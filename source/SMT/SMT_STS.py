@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
-import sys, os, time, json, argparse, resource
+import os, time, json, argparse, resource
 from z3 import *
-from constraints import *  # constraint encodings
+from constraints import * 
 import gc
 # ----------------------------------------------------------------------------
 # Parameters and Variable Setup
@@ -93,11 +92,6 @@ def solve_instance(n):
     constraint_one_match_per_slot_smt    (s, M, n, W, P)
     constraint_team_once_per_week_smt    (s, M, n, W, P)
     constraint_at_most_two_per_period_smt(s, M, n, W, P)
-    # commenta se vuoi meno overhead
-    # constraint_no_consecutive_matches  (s, M, n, W, P)
-
-    # layout constraints
-    # constraint_symmetry_breaking       (s, M, n)     # opzionale
     simple_rowcol_lex                    (s, M, n, W, P)
 
     # Solve
