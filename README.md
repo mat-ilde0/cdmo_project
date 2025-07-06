@@ -15,14 +15,22 @@ Once cloned the repo follow the following steps:
 
 ## Running the models
 
-### Run MIP model in the container
-Once the container is running and you are inside a bash in it, run the command `python source/MIP/mip_model.py <N> <solver_index>` to run the MIP model on instance N and the specified index of the solver.  
-Run `python source/MIP/mip_model.py -h` to see a help message listing all the available MIP models.
+### Run all models on all instances automatically
+From inside a bash in the docker container run the command `python source/run_all.py`
 
 ### Run a CP model in the container
 1. Open a terminal in the root folder of the project and run the container
 2. Access to a bash inside it
 3. `minizinc source/CP/cp_model.mzn /data/CP/N.dzn --solver Gecode` where N is the instance number
+
+### Run MIP model in the container
+- **Run a single solver on the specified instance**:
+    Once the container is running and you are inside a bash in it, run the command `python source/MIP/mip_model.py <N> <solver_index> -o` to run the MIP model on instance N and the specified index of the solver. The flag `-o` is optional and if present, the optimised version will be solved.  
+    Run `python source/MIP/mip_model.py -h` to see a help message listing all the available MIP models.
+
+- **Run all MIP solvers on all instances**:
+    Once the container is running and you're inside a bash in it, run the command `python source/MIP/mip_model.py -a` to automatically run all the solvers on all the instances.
+
 
 ### Check the solutions
 To check if all the produced solutions are valid run the command: `python source/solution_checker.py res/<folder_name>` where `<folder_name>` is the name of the folder containing the jsons relative to the computed solutions (e.g. `res/MIP`).
