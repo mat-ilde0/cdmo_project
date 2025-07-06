@@ -15,6 +15,9 @@ Once cloned the repo follow the following steps:
 
 ## Running the models
 
+### Run all models on all instances automatically
+From inside a bash in the docker container run the command `python source/run_all.py`
+
 ### Run a CP model in the container
 1. Open a terminal in the root folder of the project and run the container
 2. Access to a bash inside it
