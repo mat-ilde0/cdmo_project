@@ -22,7 +22,7 @@ commands = [
     [sys.executable, 'MIP/mip_model.py', '-a'],
     [sys.executable, 'SAT/SAT_STS.py', '-a'],
     [sys.executable, 'SMT/SMT_STS.py', '-a'],
-    # TODO : add also CP
+    [sys.executable, 'CP/CP_STS.py', '--a']
 ]
 
 
