@@ -21,7 +21,23 @@ From inside a bash in the docker container run the command `python source/run_al
 ### Run a CP model in the container
 1. Open a terminal in the root folder of the project and run the container
 2. Access to a bash inside it
-3. `minizinc source/CP/cp_model.mzn /data/CP/N.dzn --solver Gecode` where N is the instance number
+3. `` where N is the instance number
+
+### Run a CP model in the container  
+1. Open a terminal in the root folder of the project and run the container  
+2. Access a bash inside it  
+3. Run the following command inside the container:  
+   ```bash
+   python source/CP/CP_STS.py -n <N> [--opt] [--heuristics] [--solver {chuffed,gecode,ortools}] [--no-symmetry-breaking]
+   ```
+
+   Where:
+   - `<N>` is the number of teams (must be **even**)
+   - `--opt`: run the optimization version (default: **disabled**)
+   - `--heuristics`: use first-fail variable selection (default: **disabled**)
+   - `--solver`: solver to use (default: **chuffed** for satisfaction, **ortools** for optimization)
+   - `--no-symmetry-breaking`: disable symmetry breaking constraints (default: **enabled**)
+
 
 ### Run MIP model in the container
 - **Run a single solver on the specified instance**:
