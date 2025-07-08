@@ -32,8 +32,9 @@ ALL_SOLVERS    = ["chuffed", "gecode", "ortools"]
 # combinations of the two boolean flags
 ALL_HEURISTICS = [False, True]
 ALL_SYMBREAK   = [False, True]
-# ────────────────────────────────────────────────────
 
+
+# ────────────────────────────────────────────────────
 BASE_MODEL = r"""
 include "globals.mzn";
 
@@ -50,49 +51,50 @@ array[TEAMS,WEEKS] of var SLOTS: P;
 enum HA = { Home, Away };
 array[TEAMS,WEEKS] of var HA: H;
 
-/* 1) Pairing symmetry */
-constraint forall(t in TEAMS, w in WEEKS)(
-  O[t,w] != t /\ O[O[t,w],w] = t
-);
-/* 2) Each pair once */
+/* 1) Every team plays with every other team only once */
 constraint forall(t in TEAMS)(
   all_different([O[t,w] | w in WEEKS])
 );
-/* 3) At most twice in same slot */
+/* 2) Every team plays at most twice in the same period over the tournament */
 constraint forall(t in TEAMS, s in SLOTS)(
   sum(w in WEEKS)(bool2int(P[t,w]==s)) <= 2
 );
-/* 4) One match per week */
+/* 3) Every team plays once a week */
 constraint forall(w in WEEKS)(
   all_different([O[t,w] | t in TEAMS])
 );
-/* 5) Exactly two per slot */
+/* 4) Exactly two teams must be assigned to each slot */
 constraint forall(w in WEEKS, s in SLOTS)(
   sum(t in TEAMS)(bool2int(P[t,w]==s)) = 2
 );
-/* 6) Home/Away consistency */
+/* 5) Ensure that in each match between team t and its opponent u in week w, one team plays at home and the other away. */
 constraint forall(w in WEEKS, t in TEAMS)(
   let { var TEAMS: u = O[t,w] } in
     (H[t,w]=Home /\ H[u,w]=Away)
   \/ (H[t,w]=Away /\ H[u,w]=Home)
 );
-/* 7) Slot↔Opponent channeling */
+/* 6) Connect P and O slots */
 constraint forall(w in WEEKS, t in TEAMS, u in TEAMS where t<u)(
   (O[t,w]=u) <-> (P[t,w]=P[u,w])
 );
-/* 8) Perfect matching each week */
+/* 7) Mutual opponents */
 constraint forall(w in WEEKS)(
   inverse([O[t,w] | t in TEAMS], [O[t,w] | t in TEAMS])
 );
 
 %— only apply these three if sb=true
+/* 8) Canonical first week */
 constraint sb -> forall(i in 1..n div 2)(
   O[i,1]=n+1-i /\ O[n+1-i,1]=i
   /\ H[i,1]=Home  /\ H[n+1-i,1]=Away
 );
 array[WEEKS] of var SLOTS: Seq1 = [P[1,w] | w in WEEKS];
 array[WEEKS] of var SLOTS: Seq2 = [P[2,w] | w in WEEKS];
+
+/* 9) Lexicographic ordering of periods */
 constraint sb -> lex_lesseq(Seq1,Seq2);
+
+/* 10) Fix team one in slot one in week one */
 constraint sb -> (P[1,1]=1);
 
 /* Channeling for output */
@@ -106,6 +108,9 @@ constraint forall(w in WEEKS, s in SLOTS)(
 """
 
 OPT_PART = r"""
+
+constraint sum(t in TEAMS)(HA_abs[t]) < n+1;
+
 array[TEAMS] of var int: HA_diff = [
   sum(w in WEEKS)(bool2int(H[t,w]==Home))
   - sum(w in WEEKS)(bool2int(H[t,w]==Away))
@@ -175,7 +180,7 @@ def main():
     p = argparse.ArgumentParser()
     group = p.add_mutually_exclusive_group(required=True)
     group.add_argument("-n",    type=int,           help="even # teams (single-run mode)")
-    group.add_argument("--all", action="store_true", help="run full sweep of configurations")
+    group.add_argument("--a", action="store_true", help="run full sweep of configurations")
 
     p.add_argument("--opt",        action="store_true", help="run optimization version")
     p.add_argument("--heuristics", action="store_true", help="use first-fail heuristic")
@@ -192,7 +197,7 @@ def main():
     args = p.parse_args()
 
     # “All” mode sweep
-    if args.all:
+    if args.a:
         for opt in (False, True):
             Ns = ALL_OPT_N if opt else ALL_SAT_N
             for n in Ns:
@@ -204,7 +209,7 @@ def main():
                             suffix = "_hf" if heur else ""
                             sb_suf = "" if sb else "_nosb"
                             key    = f"{solver_tag}_{mode}{suffix}{sb_suf}"
-                            out = Path("res/CP") / f"{n}.json"
+                            out = Path("../res/CP") / f"{n}.json"
                             merge_into_json(out, key, result)
                             print(f"[INFO] merged {key} into {out}")
         return
@@ -220,9 +225,9 @@ def main():
     suffix = "_hf" if args.heuristics else ""
     sb_suf = "" if args.sb else "_nosb"
     key    = f"{solver_tag}_{mode}{suffix}{sb_suf}"
-    out = Path("res/CP") / f"{args.n}.json"
+    out = Path("../res/CP") / f"{args.n}.json"
     merge_into_json(out, key, result)
     print(f"[INFO] merged {key} into {out}")
 
-if __name__=="__main__":
+if __name__ == "__main__":
     main()
