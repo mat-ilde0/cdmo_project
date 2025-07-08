@@ -19,10 +19,10 @@ from pathlib import Path
 
 # List of commands to run (modify paths if needed)
 commands = [
-    [sys.executable, 'MIP/mip_model.py', '-a'],
-    [sys.executable, 'SAT/SAT_STS.py', '-a'],
-    [sys.executable, 'SMT/SMT_STS.py', '-a'],
-    [sys.executable, 'CP/CP_STS.py', '--a']
+    [sys.executable, 'source/MIP/mip_model.py', '-a'],
+    [sys.executable, 'source/SAT/SAT_STS.py', '-a'],
+    [sys.executable, 'source/SMT/SMT_STS.py', '-a'],
+    [sys.executable, 'source/CP/CP_STS.py', '--a']
 ]
 
 

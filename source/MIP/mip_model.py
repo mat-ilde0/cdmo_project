@@ -144,8 +144,6 @@ def create_solution_json(solver, sol_matrix, output, solve_result, comb):
             "obj": obj # objective function value
         }
     }
-
-    #print('RESULT:', solution_result)
     return solution_result
 
 
@@ -264,7 +262,6 @@ def solve_instance(N: int, solver_idx: int, combination: dict) -> None:
     print(f'***{solve_result}***')
     print('-'*90 +'\n')
 
-    # -------- save results exactly as you already do --------
     sol_matrix = {}
     if solve_result in ("solved", "solved?", "limit", "infeasible", "?"):
         if solve_result in ("limit", "infeasible", "?"):
@@ -300,7 +297,6 @@ if automatic:
             for values in product([False, True], repeat=len(flags)):
                 combo = dict(zip(flags, values))
                 all_combinations.append(combo)
-            print(all_combinations)
 
             for comb in all_combinations:
                 solve_instance(N, idx, comb)
