@@ -45,7 +45,7 @@ From inside a bash in the docker container run the command `python source/run_al
     Where the possible options are:
     - `-o`: the optimised version will be solved
     - `-cp`: canonical pairing will be applied
-    - `-sb`: simmetry breaking constraint will be applied
+    - `-sb`: symmetry breaking constraint will be applied
     - `-cplex_br`: barrier algorithm will be used by CPLEX instead of symplex.
     
     Run `python source/MIP/mip_model.py -h` to see a help message listing all the available MIP models.
