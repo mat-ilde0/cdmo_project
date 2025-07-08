@@ -25,7 +25,13 @@ From inside a bash in the docker container run the command `python source/run_al
 
 ### Run MIP model in the container
 - **Run a single solver on the specified instance**:
-    Once the container is running and you are inside a bash in it, run the command `python source/MIP/mip_model.py <N> <solver_index> -o` to run the MIP model on instance N and the specified index of the solver. The flag `-o` is optional and if present, the optimised version will be solved.  
+    Once the container is running and you are inside a bash in it, run the command `python source/MIP/mip_model.py <N> <solver_index> [options]` to run the MIP model on instance N and the specified index of the solver. 
+    Where the possible options are:
+    - `-o`: the optimised version will be solved
+    - `-cp`: canonical pairing will be applied
+    - `-sb`: simmetry breaking constraint will be applied
+    - `-cplex_br`: barrier algorithm will be used by CPLEX instead of symplex.
+    
     Run `python source/MIP/mip_model.py -h` to see a help message listing all the available MIP models.
 
 - **Run all MIP solvers on all instances**:
