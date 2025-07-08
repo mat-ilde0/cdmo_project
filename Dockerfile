@@ -28,5 +28,7 @@ WORKDIR /cdmo
 # Copy application files
 ADD . .
 
+RUN chmod +x source/run_all.sh
+
 # Default command
 CMD ["/bin/bash"]

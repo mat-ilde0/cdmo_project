@@ -2,21 +2,19 @@
 The repo contains the following folders:
 - `source`: contains the source code organised in folders, one for each model type, as mentioned in the project description
 - `res`: the other one mentioned in the assigment descripion: "Collect all the solutions under a res folder, by creating specific sub-folders (res/CP, res/SMT, res/MIP, etc.)".
-- in `papers_and_docs` will be put all the useful papers we find
 
 ### Run the docker container
 Once cloned the repo follow the following steps:
 0. Open a terminal inside the root folder (where the Dockerfile is placed)
 2. Run `docker compose build` to build the container (only the first time)
-3. Run `docker compose up -d` to run the container
-4. Then, to start the container, run `docker compose up -d`.
-5. Run `docker exec -it cdmo_solvers_container bash` to access a bash in the container
-6. `docker-compose down` when finished  
+3. Then, to start the container, run `docker compose up -d`.
+4. Run `docker exec -it cdmo_solvers_container bash` to access a bash in the container
+5. `docker compose down` when finished  
 
 ## Running the models
 
 ### Run all models on all instances automatically
-From inside a bash in the docker container run the command `python source/run_all.py`
+From inside a bash in the docker container run the command `source/run_all.sh`
 
 ### Run a CP model in the container
 1. Open a terminal in the root folder of the project and run the container
@@ -58,5 +56,5 @@ From inside a bash in the docker container run the command `python source/run_al
 To check if all the produced solutions are valid run the command: `python source/solution_checker.py res/<folder_name>` where `<folder_name>` is the name of the folder containing the jsons relative to the computed solutions (e.g. `res/MIP`).
 
 ### Additional notes
-About MIP model, if you want to stop a solver before the time limit, open another terminal and run the command `pkill ampl`.
+About MIP model, if you want to stop a solver before the time limit, open another terminal and run the command `pkill ampl` from inside the container.
 
