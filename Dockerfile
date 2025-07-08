@@ -22,6 +22,8 @@ RUN python3 -m amplpy.modules install highs
 RUN python3 -m amplpy.modules install gurobi  
 RUN python3 -m amplpy.modules install cplex
 
+RUN chmod +x source/run_all.sh
+
 # Set working directory
 WORKDIR /cdmo
 

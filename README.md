@@ -9,12 +9,12 @@ Once cloned the repo follow the following steps:
 2. Run `docker compose build` to build the container (only the first time)
 3. Then, to start the container, run `docker compose up -d`.
 4. Run `docker exec -it cdmo_solvers_container bash` to access a bash in the container
-5. `docker-compose down` when finished  
+5. `docker compose down` when finished  
 
 ## Running the models
 
 ### Run all models on all instances automatically
-From inside a bash in the docker container run the command `python source/run_all.py`
+From inside a bash in the docker container run the command `source/run_all.sh`
 
 ### Run a CP model in the container
 1. Open a terminal in the root folder of the project and run the container
