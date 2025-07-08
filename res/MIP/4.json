@@ -1,35 +1,191 @@
 {
-    "cplex_opt": {
+    "cplex_DEC": {
         "sol": [],
         "time": 0,
         "optimal": true,
         "obj": "None"
     },
-    "cplex_dec": {
+    "cplex_barrier_DEC": {
         "sol": [],
         "time": 0,
         "optimal": true,
         "obj": "None"
     },
-    "gurobi_opt": {
+    "cplex_symmBreak_DEC": {
         "sol": [],
         "time": 0,
         "optimal": true,
         "obj": "None"
     },
-    "gurobi_dec": {
+    "cplex_symmBreak_barrier_DEC": {
         "sol": [],
         "time": 0,
         "optimal": true,
         "obj": "None"
     },
-    "highs_opt": {
+    "cplex_canPair_DEC": {
         "sol": [],
         "time": 0,
         "optimal": true,
         "obj": "None"
     },
-    "highs_dec": {
+    "cplex_canPair_barrier_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_canPair_symmBreak_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_canPair_symmBreak_barrier_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_barrier_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_symmBreak_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_symmBreak_barrier_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_canPair_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_canPair_barrier_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_canPair_symmBreak_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "cplex_canPair_symmBreak_barrier_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_symmBreak_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_canPair_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_canPair_symmBreak_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_symmBreak_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_canPair_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "gurobi_canPair_symmBreak_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_symmBreak_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_canPair_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_canPair_symmBreak_DEC": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_symmBreak_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_canPair_OPT": {
+        "sol": [],
+        "time": 0,
+        "optimal": true,
+        "obj": "None"
+    },
+    "highs_canPair_symmBreak_OPT": {
         "sol": [],
         "time": 0,
         "optimal": true,

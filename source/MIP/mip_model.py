@@ -4,6 +4,7 @@ import re
 from amplpy import AMPL, modules
 import argparse
 from math import floor
+from itertools import product
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -42,11 +43,18 @@ parser.add_argument('N', type=check_N_range, nargs="?", help="N")
 parser.add_argument('solver', type=check_solver_range, nargs="?", help=get_solvers_help())
 parser.add_argument('-a', '--automatic', action='store_true', help="Run all N and solver combinations automatically")
 parser.add_argument("-o", "--optimise", action="store_true", help="Turn on optimisation mode")
+parser.add_argument('-cp', '--can-pair',action='store_true',help="Enable canonical pairing")
+parser.add_argument('-sb', '--symm_break',action='store_true',help="Enable symmetry breaking on the weeks")
+parser.add_argument('-cplex_br', '--cplex_barr',action='store_true',help="Use barrier algorithm for cplex")
 
 args = parser.parse_args()
 
 optimise = args.optimise # true if the -o/--optimise flag is passed
+can_pair = args.can_pair
+symm_break = args.symm_break
+cplex_barr = args.cplex_barr
 
+all_combinations = []
 if args.automatic:
     # user typed:  python mip_model.py -a
     if args.N is not None or args.solver is not None:
@@ -96,18 +104,36 @@ def parse_timing_from_output(output):
     
     return timing_data
 
-def create_solution_json(solver, sol_matrix, output, solve_result, optimise):
+def get_sol_suffix(comb: dict, solver):
+    suffix = ""
+    
+    if comb['can_pair']:
+        suffix += "_canPair"
+    if comb['symm_break']:
+        suffix += "_symmBreak"
+    if solver == 'cplex' and comb['cplex_barr']:
+        suffix += "_barrier"
+    if comb['optimise']:
+        suffix += "_OPT"
+    if not comb['optimise']:
+        suffix += "_DEC"
+    
+    return suffix
+
+
+def create_solution_json(solver, sol_matrix, output, solve_result, comb):
     optimal = solve_result in ("solved", "infeasible")
     obj = 'None'
-    if optimise:
+    if comb['optimise']:
         obj = ampl.get_objective('TotalImbalance').value() if solve_result not in ("limit", "infeasible", "?") else 'None'
     time = 0
     if solve_result in ("solved", "solved?", "infeasible"):
         time = floor(parse_timing_from_output(output)['Total time'])
     elif solve_result in ("limit", "?"):
         time = 300
+    print("time= ", time)
 
-    approach = '_opt' if optimise else '_dec'
+    approach = get_sol_suffix(comb, solver)
     key_name = solver +  approach
     
     solution_result = {
@@ -126,7 +152,7 @@ def create_solution_json(solver, sol_matrix, output, solve_result, optimise):
 # ----------------------------------------------------------------------------
 # The model
 # ----------------------------------------------------------------------------
-def load_model(N:int, optimise: bool):
+def load_model(N:int, optimise: bool, symm_break: bool, can_pair: bool):
     ampl.eval(f"param N := {N};")
     ampl.eval("""
         set TEAMS = 1..N;
@@ -136,7 +162,6 @@ def load_model(N:int, optimise: bool):
         var x {i in TEAMS, j in TEAMS, p in PERIODS, w in WEEKS: i != j} binary;
     """)
 
-    
     if optimise: 
         ampl.eval("""
             var home_games {i in TEAMS} integer >= 0, <= card(TEAMS);
@@ -165,6 +190,15 @@ def load_model(N:int, optimise: bool):
                 home_away_diff[i] >= away_games[i] - home_games[i];
         """)
 
+    if symm_break:
+        ampl.eval("""
+            param game_value {i in TEAMS, j in TEAMS: i != j} := (i-1) * card(TEAMS) + j;
+                  
+            subject to LexicographicalWeekOrdering {w in WEEKS: w < card(WEEKS)}:
+                sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w]) <=
+                sum {p in PERIODS, i in TEAMS, j in TEAMS: i!=j} (game_value[i,j] * x[i,j,p,w+1]);
+        """)
+
     # CONSTR 1: every team plays every other team exactly once
     ampl.eval("""
         subject to PlayOnlyOnce {i in TEAMS, j in TEAMS: i < j}:
@@ -184,49 +218,44 @@ def load_model(N:int, optimise: bool):
         sum {j in TEAMS: i != j} sum {w in WEEKS} (x[i,j,p,w] + x[j,i,p,w]) <= 2;
     """)
 
-    # CONSTR 4: in every period there is at the most one match
+    # CONSTR 4: in every slot there is at the most one match
     ampl.eval("""
-    subject to OneMatchPerPeriodWeek {p in PERIODS, w in WEEKS}:
+    subject to OneMatchPerSlot {p in PERIODS, w in WEEKS}:
         sum {i in TEAMS, j in TEAMS: i != j} x[i,j,p,w] = 1;
     """)
 
-    # CONSTR: canonical pairing
-    ampl.eval("""
-    subject to CanonicalPairing {p in PERIODS}:
-        x[p, N + 1 - p, p, 1] = 1;
-    """)
+    if can_pair:
+        # CONSTR: canonical pairing
+        ampl.eval("""
+        subject to CanonicalPairing {p in PERIODS}:
+            x[p, N + 1 - p, p, 1] = 1;
+        """)
 
 # ----------------------------------------------------------------------------
 # Solver set up 
 # ----------------------------------------------------------------------------
 time_limit = 300
-mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2 tech:threads=1 ' #outlev=1'
 opt_names = {
     'gurobi':'gurobi_options',
     'cplex': 'cplex_options',
     'highs': 'highs_options'
 } 
-solver_opt = {
-    'gurobi_options': mp_options_str + 'sol:count=0',
-    'cplex_options': mp_options_str + 'alg:barrier',
-    'highs_options': mp_options_str
-}
 
-def solve_instance(N: int, solver_idx: int, optimise: bool) -> None:
+def solve_instance(N: int, solver_idx: int, combination: dict) -> None:
     ampl.reset()                               # fresh model
-    load_model(N, optimise)
+    load_model(N, optimise=comb['optimise'], symm_break=comb['symm_break'], can_pair=['can_pair'])
 
     solver_name = available_solvers[solver_idx]
-    opt_name = opt_names[solver_name]
 
+    mp_options_str = f'lim:time={time_limit} report_times=1 tech:timing=2 tech:threads=1 '
     ampl.option["solver"] = solver_name
-    ampl.option[opt_name] = solver_opt[opt_name]
-    ampl.option["presolve"] = 90
+    if solver_name == 'cplex' and combination['cplex_barr']: mp_options_str += 'alg:barrier'
 
-    version = "Optimization" if optimise else "Decision"
+    opt_name = opt_names[solver_name]
+    ampl.option[opt_name] = mp_options_str
 
     print('\n' + '-'*90)
-    print(f"SOLVING N = {N} with {solver_name} - {version}")
+    print(f"SOLVING N = {N} with {solver_name + get_sol_suffix(comb, solver_name)}")
     print(f'- Solver\'s options: {ampl.get_option(opt_name)}')
 
     output = ampl.solve(verbose=True, return_output=True)
@@ -251,7 +280,7 @@ def solve_instance(N: int, solver_idx: int, optimise: bool) -> None:
                     data = json.load(f)
             except Exception:
                 pass
-        data.update(create_solution_json(solver_name, sol_matrix, output, solve_result, optimise))
+        data.update(create_solution_json(solver_name, sol_matrix, output, solve_result, comb))
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
 
@@ -263,7 +292,23 @@ if automatic:
     instances = range(4, 15, 2)               # 4,6,…,14
     for N in instances:
         for idx in range(len(available_solvers)):
-            solve_instance(N, idx, optimise=True)
-            solve_instance(N, idx, optimise=False)
+            flags = ["optimise", "can_pair", "symm_break"]
+            if available_solvers[idx] == 'cplex':
+                flags.append('cplex_barr')
+    
+            all_combinations = []
+            for values in product([False, True], repeat=len(flags)):
+                combo = dict(zip(flags, values))
+                all_combinations.append(combo)
+            print(all_combinations)
+
+            for comb in all_combinations:
+                solve_instance(N, idx, comb)
 else:
-    solve_instance(args.N, args.solver, optimise)
+    comb = {
+        'optimise': optimise,
+        'can_pair': can_pair,
+        'symm_break': symm_break,
+        'cplex_barr': cplex_barr
+    }
+    solve_instance(args.N, args.solver, comb)
