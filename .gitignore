@@ -1,2 +1,5 @@
 .DS_store
 .keep
+
+__pycache__/
+*/__pycache__/
