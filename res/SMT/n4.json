@@ -1,6 +1,12 @@
 {
   "SMT_dec": {
-    "time": 0,
+    "time": 0.01,
+    "optimal": true,
+    "obj": null,
+    "sol": []
+  },
+  "SMT_opt": {
+    "time": 0.004,
     "optimal": true,
     "obj": null,
     "sol": []

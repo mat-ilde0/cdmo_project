@@ -1,0 +1,683 @@
+p cnf 342 340
+1 0
+2 0
+3 0
+4 0
+5 0
+6 0
+7 0
+8 0
+9 0
+10 0
+11 0
+12 0
+13 0
+14 0
+15 0
+16 0
+17 0
+18 0
+19 0
+20 0
+21 0
+22 0
+23 0
+24 0
+25 0
+26 0
+27 0
+28 0
+29 0
+30 0
+31 0
+32 0
+33 0
+34 0
+35 0
+36 0
+37 0
+38 0
+39 0
+40 0
+41 0
+42 0
+43 0
+44 0
+45 0
+46 0
+47 0
+48 0
+49 0
+50 0
+51 0
+52 0
+53 0
+54 0
+55 0
+56 0
+57 0
+58 0
+59 0
+60 0
+61 0
+62 0
+63 0
+64 0
+65 0
+66 0
+67 0
+68 0
+69 0
+70 0
+71 0
+72 0
+73 0
+74 0
+75 0
+76 0
+77 0
+78 0
+79 0
+80 0
+81 0
+82 0
+83 0
+84 0
+85 0
+86 0
+87 0
+88 0
+89 0
+90 0
+91 0
+92 0
+93 0
+94 0
+95 0
+96 0
+97 0
+98 0
+99 0
+100 0
+101 0
+102 0
+103 0
+104 0
+105 0
+106 0
+107 0
+108 0
+109 0
+110 0
+111 0
+112 0
+113 0
+114 0
+115 0
+116 0
+117 0
+118 0
+119 0
+120 0
+121 0
+122 0
+123 0
+124 0
+125 0
+126 0
+127 0
+128 0
+129 0
+130 0
+131 0
+132 0
+133 0
+134 0
+135 0
+136 0
+137 0
+138 0
+139 0
+140 0
+141 0
+142 0
+143 0
+144 0
+145 0
+146 0
+147 0
+148 0
+149 0
+150 0
+151 0
+152 0
+153 0
+154 0
+155 0
+156 0
+157 0
+158 0
+159 0
+160 0
+161 0
+162 0
+163 0
+164 0
+165 0
+166 0
+167 0
+168 0
+169 0
+170 0
+171 0
+172 0
+173 0
+174 0
+175 0
+176 0
+177 0
+178 0
+179 0
+180 0
+181 0
+182 0
+183 0
+184 0
+185 0
+186 0
+187 0
+188 0
+189 0
+190 0
+191 0
+192 0
+193 0
+194 0
+195 0
+196 0
+197 0
+198 0
+199 0
+200 0
+201 0
+202 0
+203 0
+204 0
+205 0
+206 0
+207 0
+208 0
+209 0
+210 0
+211 0
+212 0
+213 0
+214 0
+215 0
+216 0
+217 0
+218 0
+219 0
+220 0
+221 0
+222 0
+223 0
+224 0
+225 0
+226 0
+227 0
+228 0
+229 0
+230 0
+231 0
+232 0
+233 0
+234 0
+235 0
+236 0
+237 0
+238 0
+239 0
+240 0
+241 0
+242 0
+243 0
+244 0
+245 0
+246 0
+247 0
+248 0
+249 0
+250 0
+251 0
+252 0
+253 0
+254 0
+255 0
+256 0
+257 0
+258 0
+259 0
+260 0
+261 0
+262 0
+263 0
+264 0
+265 0
+266 0
+267 0
+268 0
+269 0
+270 0
+271 0
+272 0
+273 0
+274 0
+275 0
+276 0
+277 0
+278 0
+279 0
+280 0
+281 0
+282 0
+283 0
+284 0
+285 0
+286 0
+287 0
+288 0
+289 0
+290 0
+291 0
+292 0
+293 0
+294 0
+295 0
+296 0
+297 0
+298 0
+299 0
+300 0
+301 0
+302 0
+303 0
+304 0
+305 0
+306 0
+307 0
+308 0
+309 0
+310 0
+311 0
+312 0
+313 0
+314 0
+315 0
+316 0
+317 0
+318 0
+319 0
+320 0
+321 0
+322 0
+323 0
+324 0
+325 0
+326 0
+327 0
+328 0
+329 0
+330 0
+331 0
+332 0
+333 0
+334 0
+335 0
+336 0
+-337 338 0
+-339 340 0
+-337 341 0
+-339 342 0
+c 337 m_0_1_w0_p0
+c 339 m_0_2_w0_p0
+c 340 m_1_3_w0_p1
+c 342 m_1_3_w1_p0
+c 338 m_2_3_w0_p1
+c 341 m_2_3_w1_p0
+c 1 pbeq
+c 2 pbeq
+c 3 pbeq
+c 4 pbeq
+c 5 pbeq
+c 6 pbeq
+c 7 pbeq
+c 8 pbeq
+c 9 pbeq
+c 10 pbeq
+c 11 pbeq
+c 12 pbeq
+c 13 pbeq
+c 14 pbeq
+c 15 pbeq
+c 16 pbeq
+c 17 pbeq
+c 18 pbeq
+c 19 pbeq
+c 20 pbeq
+c 21 pbeq
+c 22 pbeq
+c 23 pbeq
+c 24 pbeq
+c 25 pbeq
+c 26 pbeq
+c 27 pbeq
+c 28 pbeq
+c 29 pbeq
+c 30 pbeq
+c 31 pbeq
+c 32 pbeq
+c 33 pbeq
+c 34 pbeq
+c 35 pbeq
+c 36 pbeq
+c 37 pbeq
+c 38 pbeq
+c 39 pbeq
+c 40 pbeq
+c 41 pbeq
+c 42 pbeq
+c 43 pbeq
+c 44 pbeq
+c 45 pbeq
+c 46 pbeq
+c 47 pbeq
+c 48 pbeq
+c 49 pbeq
+c 50 pbeq
+c 51 pbeq
+c 52 pbeq
+c 53 pbeq
+c 54 pbeq
+c 55 pbeq
+c 56 pbeq
+c 57 pbeq
+c 58 pbeq
+c 59 pbeq
+c 60 pbeq
+c 61 pbeq
+c 62 pbeq
+c 63 pbeq
+c 64 pbeq
+c 65 pbeq
+c 66 pbeq
+c 67 pbeq
+c 68 pbeq
+c 69 pbeq
+c 70 pbeq
+c 71 pbeq
+c 72 pbeq
+c 73 pbeq
+c 74 pbeq
+c 75 pbeq
+c 76 pbeq
+c 77 pbeq
+c 78 pbeq
+c 79 pbeq
+c 80 pbeq
+c 81 pbeq
+c 82 pbeq
+c 83 pbeq
+c 84 pbeq
+c 85 pbeq
+c 86 pbeq
+c 87 pbeq
+c 88 pbeq
+c 89 pbeq
+c 90 pbeq
+c 91 pbeq
+c 92 pbeq
+c 93 pbeq
+c 94 pbeq
+c 95 pbeq
+c 96 pbeq
+c 97 pbeq
+c 98 pbeq
+c 99 pbeq
+c 100 pbeq
+c 101 pbeq
+c 102 pbeq
+c 103 pbeq
+c 104 pbeq
+c 105 pbeq
+c 106 pbeq
+c 107 pbeq
+c 108 pbeq
+c 109 pbeq
+c 110 pbeq
+c 111 pbeq
+c 112 pbeq
+c 113 pbeq
+c 114 pbeq
+c 115 pbeq
+c 116 pbeq
+c 117 pbeq
+c 118 pbeq
+c 119 pbeq
+c 120 pbeq
+c 121 pbeq
+c 122 pbeq
+c 123 pbeq
+c 124 pbeq
+c 125 pbeq
+c 126 pbeq
+c 127 pbeq
+c 128 pbeq
+c 129 pbeq
+c 130 pbeq
+c 131 pbeq
+c 132 pbeq
+c 133 pbeq
+c 134 pbeq
+c 135 pbeq
+c 136 pbeq
+c 137 pbeq
+c 138 pbeq
+c 139 pbeq
+c 140 pbeq
+c 141 pbeq
+c 142 pbeq
+c 143 pbeq
+c 144 pbeq
+c 145 pbeq
+c 146 pbeq
+c 147 pbeq
+c 148 pbeq
+c 149 pbeq
+c 150 pbeq
+c 151 pbeq
+c 152 pbeq
+c 153 pbeq
+c 154 pbeq
+c 155 pbeq
+c 156 pbeq
+c 157 pbeq
+c 158 pbeq
+c 159 pbeq
+c 160 pbeq
+c 161 pbeq
+c 162 pbeq
+c 163 pbeq
+c 164 pbeq
+c 165 pbeq
+c 166 pbeq
+c 167 pbeq
+c 168 pbeq
+c 169 pbeq
+c 170 pbeq
+c 171 pbeq
+c 172 pbeq
+c 173 pbeq
+c 174 pbeq
+c 175 pbeq
+c 176 pbeq
+c 177 pbeq
+c 178 pbeq
+c 179 pbeq
+c 180 pbeq
+c 181 pbeq
+c 182 pbeq
+c 183 pbeq
+c 184 pbeq
+c 185 pbeq
+c 186 pbeq
+c 187 pbeq
+c 188 pbeq
+c 189 pbeq
+c 190 pbeq
+c 191 pbeq
+c 192 pbeq
+c 193 pbeq
+c 194 pbeq
+c 195 pbeq
+c 196 pbeq
+c 197 pbeq
+c 198 pbeq
+c 199 pbeq
+c 200 pbeq
+c 201 pbeq
+c 202 pbeq
+c 203 pbeq
+c 204 pbeq
+c 205 pbeq
+c 206 pbeq
+c 207 pbeq
+c 208 pbeq
+c 209 pbeq
+c 210 pbeq
+c 211 pbeq
+c 212 pbeq
+c 213 pbeq
+c 214 pbeq
+c 215 pbeq
+c 216 pbeq
+c 217 pbeq
+c 218 pbeq
+c 219 pbeq
+c 220 pbeq
+c 221 pbeq
+c 222 pbeq
+c 223 pbeq
+c 224 pbeq
+c 225 pbeq
+c 226 pbeq
+c 227 pbeq
+c 228 pbeq
+c 229 pbeq
+c 230 pbeq
+c 231 pbeq
+c 232 pbeq
+c 233 pbeq
+c 234 pbeq
+c 235 pbeq
+c 236 pbeq
+c 237 pbeq
+c 238 pbeq
+c 239 pbeq
+c 240 pbeq
+c 241 pbeq
+c 242 pbeq
+c 243 pbeq
+c 244 pbeq
+c 245 pbeq
+c 246 pbeq
+c 247 pbeq
+c 248 pbeq
+c 249 pbeq
+c 250 pbeq
+c 251 pbeq
+c 252 pbeq
+c 253 pbeq
+c 254 pbeq
+c 255 pbeq
+c 256 pbeq
+c 257 pbeq
+c 258 pbeq
+c 259 pbeq
+c 260 pbeq
+c 261 pbeq
+c 262 pbeq
+c 263 pbeq
+c 264 pbeq
+c 265 at-most
+c 266 at-most
+c 267 at-most
+c 268 at-most
+c 269 at-most
+c 270 at-most
+c 271 at-most
+c 272 at-most
+c 273 at-most
+c 274 at-most
+c 275 at-most
+c 276 at-most
+c 277 at-most
+c 278 at-most
+c 279 at-most
+c 280 at-most
+c 281 at-most
+c 282 at-most
+c 283 at-most
+c 284 at-most
+c 285 at-most
+c 286 at-most
+c 287 at-most
+c 288 at-most
+c 289 at-most
+c 290 at-most
+c 291 at-most
+c 292 at-most
+c 293 at-most
+c 294 at-most
+c 295 at-most
+c 296 at-most
+c 297 at-most
+c 298 at-most
+c 299 at-most
+c 300 at-most
+c 301 at-most
+c 302 at-most
+c 303 at-most
+c 304 at-most
+c 305 at-most
+c 306 at-most
+c 307 at-most
+c 308 at-most
+c 309 at-most
+c 310 at-most
+c 311 at-most
+c 312 at-most
+c 313 at-most
+c 314 at-most
+c 315 at-most
+c 316 at-most
+c 317 at-most
+c 318 at-most
+c 319 at-most
+c 320 at-most
+c 321 at-most
+c 322 at-most
+c 323 at-most
+c 324 at-most
+c 325 at-most
+c 326 at-most
+c 327 at-most
+c 328 at-most
+c 329 at-most
+c 330 at-most
+c 331 at-most
+c 332 at-most
+c 333 at-most
+c 334 at-most
+c 335 at-most
+c 336 at-most

@@ -51,6 +51,25 @@ From inside a bash in the docker container run the command `source/run_all.sh`
 - **Run all MIP solvers on all instances**:
     Once the container is running and you're inside a bash in it, run the command `python source/MIP/mip_model.py -a` to automatically run all the solvers on all the instances.
 
+### Run SAT model in the container
+- **Run the SAT solver on the specified instance**:
+    Once the container is running and you are inside a bash in it, run the command `python source/SAT/SAT_STS.py <N> [options]` to run the SAT model on instance N.
+    Where the possible options are:
+    - `-a`: solve all instances from N=4 to N=14
+    - `--no-sb`: disable symmetry breaking constraints
+
+    Run `python source/SAT/SAT_STS.py -h` to see a help message listing all the available options.
+
+### Run SMT model in the container
+- **Run the SMT solver on the specified instance**:
+    Once the container is running and you are inside a bash in it, run the command `python source/SMT/SMT_STS.py <N> [options]` to run the SMT model on instance N.
+    Where the possible options are:
+    - `-a`: solve all instances from N=4 to N=14
+    - `-o`: enable optimisation to minimise total home-away imbalance
+    - `--export-smt2`: export the SMT-LIB2 file of the model
+    - `--no-sb`: disable symmetry breaking constraints
+
+    Run `python source/SMT/SMT_STS.py -h` to see a help message listing all the available SMT options.
 
 ### Check the solutions
 To check if all the produced solutions are valid run the command: `python source/solution_checker.py res/<folder_name>` where `<folder_name>` is the name of the folder containing the jsons relative to the computed solutions (e.g. `res/MIP`).

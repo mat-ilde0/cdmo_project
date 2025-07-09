@@ -91,9 +91,10 @@ def solve_instance(n):
     constraint_each_pair_once(s, M, n, W, P)
     constraint_one_match_per_slot(s, M, n, W, P)
     constraint_team_once_per_week(s, M, n, W, P)
-    at_most_two_per_period_optimized(s, M, n, W, P)
-    add_implied_constraints(s, M, n, W, P)
-    simple_rowcol_lex(s, M, n, W, P)
+    at_most_two_per_period(s, M, n, W, P)
+
+    if not args.no_sb:
+        simple_rowcol_lex(s, M, n, W, P)
 
     # Solve
     t0 = time.time()
@@ -131,6 +132,8 @@ parser.add_argument('-a', '--automatic', action='store_true',
                     help='solve N = 4,6,...,14 in batch')
 parser.add_argument('-o', '--optimise', action='store_true',
                     help='[ignored] optimization handled by MIP script')
+parser.add_argument('--no-sb', action='store_true',
+                    help='disable row/column symmetry-breaking clauses')
 args = parser.parse_args()
 
 if args.optimise:

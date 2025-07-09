@@ -38,29 +38,43 @@ def constraint_at_most_two_per_period_smt(solver, M, n, W, P):
 
 def constraint_symmetry_breaking(solver, M, n):
     solver.add(M[(0, 1, 0, 0)])
-
 def simple_rowcol_lex(s, M, n, W, P):
     def weight(i, j):
         return i * n + j + 1
 
-    w0 = 0
-    row_codes = []
-    for p in range(P):
-        code = Sum([
-            If(M[(i, j, w0, p)], weight(i, j), 0)
-            for i in range(n) for j in range(i + 1, n)
-        ])
-        row_codes.append(code)
-    for p in range(P - 1):
-        s.add(row_codes[p] <= row_codes[p + 1])
-
     p0 = 0
-    col_codes = []
+    week_codes = []
     for w in range(W):
         code = Sum([
             If(M[(i, j, w, p0)], weight(i, j), 0)
             for i in range(n) for j in range(i + 1, n)
         ])
-        col_codes.append(code)
+        week_codes.append(code)
+
     for w in range(W - 1):
-        s.add(col_codes[w] <= col_codes[w + 1])
+        s.add(week_codes[w] <= week_codes[w + 1])
+
+
+def add_total_home_away_imbalance_expr(solver, M, n):
+    matches_per_team = n - 1         
+
+    home_vars = [[] for _ in range(n)]
+    for (i, j, _, _), v in M.items():     # i < j
+        home_vars[i].append(v)
+
+    diffs = []
+    for i in range(n):
+        home_i = Sum([If(v, 1, 0) for v in home_vars[i]])
+        d_i = Int(f"diff_{i}")
+        solver.add(d_i >=  2*home_i - matches_per_team)
+        solver.add(d_i >= -2*home_i + matches_per_team)
+        diffs.append(d_i)
+
+    total_imbalance = Int("total_imbalance")
+    solver.add(total_imbalance == Sum(diffs))
+    
+    LB = n               
+    UB = n * (n - 1)     
+    solver.add(total_imbalance >= LB, total_imbalance <= UB)
+
+    return total_imbalance

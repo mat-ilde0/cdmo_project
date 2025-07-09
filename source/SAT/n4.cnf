@@ -1,0 +1,65 @@
+p cnf 32 32
+1 0
+2 0
+3 0
+4 0
+5 0
+6 0
+7 0
+8 0
+9 0
+10 0
+11 0
+12 0
+13 0
+14 0
+15 0
+16 0
+17 0
+18 0
+19 0
+20 0
+21 0
+22 0
+23 0
+24 0
+25 0
+26 0
+27 0
+28 0
+29 0
+30 0
+31 0
+32 0
+c 1 pbeq
+c 2 pbeq
+c 3 pbeq
+c 4 pbeq
+c 5 pbeq
+c 6 pbeq
+c 7 pbeq
+c 8 pbeq
+c 9 pbeq
+c 10 pbeq
+c 11 pbeq
+c 12 pbeq
+c 13 pbeq
+c 14 pbeq
+c 15 pbeq
+c 16 pbeq
+c 17 pbeq
+c 18 pbeq
+c 19 pbeq
+c 20 pbeq
+c 21 pbeq
+c 22 pbeq
+c 23 pbeq
+c 24 pbeq
+c 25 at-most
+c 26 at-most
+c 27 at-most
+c 28 at-most
+c 29 at-most
+c 30 at-most
+c 31 at-most
+c 32 at-most

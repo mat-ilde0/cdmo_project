@@ -25,32 +25,14 @@ def constraint_team_once_per_week(s, M, n, W, P):
                        for p in range(P)]
             s.add(exactly_one(vars_tw))
 
-def at_most_two_per_period(s, M, n, W, P):
-    for t in range(n):
-        for p in range(P):
-            lits = [(M[(min(t,o), max(t,o), w, p)], 1)
-                    for o in range(n) if o != t
-                    for w in range(W)]
-            s.add(PbLe(lits, 2))
 
-def at_most_two_per_period_optimized(s, M, n, W, P):
+def at_most_two_per_period(s, M, n, W, P):
     for t in range(n):
         for p in range(P):
             vars_tp = [M[(min(t,o), max(t,o), w, p)]
                       for o in range(n) if o != t
                       for w in range(W)]
             s.add(PbLe([(v, 1) for v in vars_tp], 2))
-
-        
-def add_implied_constraints(s, M, n, W, P):
-    # IMPLIED CONSTRAINT 2: Each week has exactly n/2 matches per period
-    # Since each period can have at most one match, and we have n/2 periods,
-    # each period must have exactly 1 match
-    for w in range(W):
-        for p in range(P):
-            vars_wp = [M[(i, j, w, p)]
-                      for i in range(n) for j in range(i + 1, n)]
-            s.add(exactly_one(vars_wp))
 
 def simple_rowcol_lex(s, M, n, W, P):
     w = 0

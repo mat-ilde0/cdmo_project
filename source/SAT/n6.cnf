@@ -1,0 +1,157 @@
+p cnf 78 78
+1 0
+2 0
+3 0
+4 0
+5 0
+6 0
+7 0
+8 0
+9 0
+10 0
+11 0
+12 0
+13 0
+14 0
+15 0
+16 0
+17 0
+18 0
+19 0
+20 0
+21 0
+22 0
+23 0
+24 0
+25 0
+26 0
+27 0
+28 0
+29 0
+30 0
+31 0
+32 0
+33 0
+34 0
+35 0
+36 0
+37 0
+38 0
+39 0
+40 0
+41 0
+42 0
+43 0
+44 0
+45 0
+46 0
+47 0
+48 0
+49 0
+50 0
+51 0
+52 0
+53 0
+54 0
+55 0
+56 0
+57 0
+58 0
+59 0
+60 0
+61 0
+62 0
+63 0
+64 0
+65 0
+66 0
+67 0
+68 0
+69 0
+70 0
+71 0
+72 0
+73 0
+74 0
+75 0
+76 0
+77 0
+78 0
+c 1 pbeq
+c 2 pbeq
+c 3 pbeq
+c 4 pbeq
+c 5 pbeq
+c 6 pbeq
+c 7 pbeq
+c 8 pbeq
+c 9 pbeq
+c 10 pbeq
+c 11 pbeq
+c 12 pbeq
+c 13 pbeq
+c 14 pbeq
+c 15 pbeq
+c 16 pbeq
+c 17 pbeq
+c 18 pbeq
+c 19 pbeq
+c 20 pbeq
+c 21 pbeq
+c 22 pbeq
+c 23 pbeq
+c 24 pbeq
+c 25 pbeq
+c 26 pbeq
+c 27 pbeq
+c 28 pbeq
+c 29 pbeq
+c 30 pbeq
+c 31 pbeq
+c 32 pbeq
+c 33 pbeq
+c 34 pbeq
+c 35 pbeq
+c 36 pbeq
+c 37 pbeq
+c 38 pbeq
+c 39 pbeq
+c 40 pbeq
+c 41 pbeq
+c 42 pbeq
+c 43 pbeq
+c 44 pbeq
+c 45 pbeq
+c 46 pbeq
+c 47 pbeq
+c 48 pbeq
+c 49 pbeq
+c 50 pbeq
+c 51 pbeq
+c 52 pbeq
+c 53 pbeq
+c 54 pbeq
+c 55 pbeq
+c 56 pbeq
+c 57 pbeq
+c 58 pbeq
+c 59 pbeq
+c 60 pbeq
+c 61 at-most
+c 62 at-most
+c 63 at-most
+c 64 at-most
+c 65 at-most
+c 66 at-most
+c 67 at-most
+c 68 at-most
+c 69 at-most
+c 70 at-most
+c 71 at-most
+c 72 at-most
+c 73 at-most
+c 74 at-most
+c 75 at-most
+c 76 at-most
+c 77 at-most
+c 78 at-most
