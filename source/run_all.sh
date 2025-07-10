@@ -5,8 +5,8 @@ set -eo pipefail
 
 PY=python   # adjust if your container uses a different python command
 
-echo "=== Running MIP stage ==="
-$PY source/MIP/mip_model.py -a
+#echo "=== Running MIP stage ==="
+#$PY source/MIP/mip_model.py -a
 
 echo "=== Running SAT stage ==="
 $PY source/SAT/SAT_STS.py -a

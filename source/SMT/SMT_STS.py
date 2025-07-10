@@ -31,21 +31,30 @@ def print_solution(sol_matrix):
         print(row)
 
 def seconds_since(t0):
-    return round(time.time() - t0, 3)
+    # Restituisce i secondi interi trascorsi
+    return int(time.time() - t0)
 
 # ----------------------------------------------------------------------------
 # JSON persistence
 # ----------------------------------------------------------------------------
 def save_solution_json(n, status, runtime_s, sol, *, optimise=False, obj_val=None):
+    # time_val in secondi interi
     time_val = 300 if status == 'timeout' else runtime_s
     optimal = (status in ('sat','unsat'))
-    entry = {"time": time_val, "optimal": optimal, "obj": obj_val if optimise else None, "sol": sol}
-    out_dir = "../../res/SMT"; os.makedirs(out_dir, exist_ok=True)
+    entry = {
+        "time": time_val,
+        "optimal": optimal,
+        "obj": obj_val if optimise else None,
+        "sol": sol
+    }
+    out_dir = "../../res/SMT"
+    os.makedirs(out_dir, exist_ok=True)
     path = os.path.join(out_dir, f"n{n}.json")
     data = json.load(open(path)) if os.path.isfile(path) else {}
     key = "SMT_opt" if optimise else "SMT_dec"
     data[key] = entry
-    json.dump(data, open(path, 'w'), indent=2)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
     print(f"✔ {key} written to {path}")
 
 # ----------------------------------------------------------------------------
@@ -53,7 +62,8 @@ def save_solution_json(n, status, runtime_s, sol, *, optimise=False, obj_val=Non
 # ----------------------------------------------------------------------------
 def export_to_smtlib2(solver, filename: str):
     smt_text = "(set-logic QF_LIA)\n" + solver.to_smt2()
-    open(filename, 'w').write(smt_text)
+    with open(filename, 'w') as f:
+        f.write(smt_text)
     print(f"✔ SMT-LIB2 written to {filename}")
 
 # ----------------------------------------------------------------------------
@@ -85,57 +95,74 @@ def solve_instance(n: int, args, *, optimise: bool = False):
     # decision
     if not optimise:
         t0 = time.time(); res = s.check(); elapsed = seconds_since(t0)
-        timing = {"Total time":elapsed,
-                  "User CPU":round(resource.getrusage(resource.RUSAGE_SELF).ru_utime,3),
-                  "System CPU":round(resource.getrusage(resource.RUSAGE_SELF).ru_stime,3)}
-        print("[Timing]"); [print(f"{k}: {v}s") for k,v in timing.items()]
-        if res==sat:
-            sol=extract_solution(s.model(),M,W,P); print_solution(sol)
-            save_solution_json(n,'sat',elapsed,sol)
-        elif res==unsat:
+        timing = {
+            "Total time (s)": elapsed,
+            "User CPU (s)": int(resource.getrusage(resource.RUSAGE_SELF).ru_utime),
+            "System CPU (s)": int(resource.getrusage(resource.RUSAGE_SELF).ru_stime)
+        }
+        print("[Timing]")
+        for k, v in timing.items():
+            print(f"{k}: {v}s")
+        if res == sat:
+            sol = extract_solution(s.model(), M, W, P)
+            print_solution(sol)
+            save_solution_json(n, 'sat', elapsed, sol)
+        elif res == unsat:
             print(f"[RESULT] UNSAT in {elapsed}s")
-            save_solution_json(n,'unsat',elapsed,[])
+            save_solution_json(n, 'unsat', elapsed, [])
         else:
             print(f"[RESULT] TIMEOUT after {elapsed}s")
-            save_solution_json(n,'timeout',elapsed,[])
+            save_solution_json(n, 'timeout', elapsed, [])
         return
     # optimisation
     print("[INFO] Phase 1: find any feasible schedule…")
     s.set("timeout",120_000 if n>=8 else 60_000)
     t0 = time.time(); res1 = s.check(); elapsed1 = seconds_since(t0)
     print(f"[Timing] Phase 1 solved in {elapsed1}s (res={res1})")
-    if res1==unsat:
-        save_solution_json(n,'unsat',elapsed1,[],optimise=True); return
-    if res1!=sat:
-        save_solution_json(n,'timeout',elapsed1,[],optimise=True); return
+    if res1 == unsat:
+        save_solution_json(n, 'unsat', elapsed1, [], optimise=True)
+        return
+    if res1 != sat:
+        save_solution_json(n, 'timeout', elapsed1, [], optimise=True)
+        return
     best_model = s.model()
     best_val = int(best_model.evaluate(total_imbalance).as_long())
     print(f"[INFO] Initial model | imbalance = {best_val}")
-    if best_val>LB:
+    if best_val > LB:
         print("[INFO] Phase 2: decremental search…")
-        per_iter=60_000 if n>=8 else 30_000
-        for k in range(best_val-2,LB-1,-2):
-            s.push(); s.add(total_imbalance <= k); s.set("timeout",per_iter)
-            if s.check()==sat:
-                best_model,best_val=s.model(),k
+        per_iter = 60_000 if n>=8 else 30_000
+        for k in range(best_val-2, LB-1, -2):
+            s.push(); s.add(total_imbalance <= k); s.set("timeout", per_iter)
+            if s.check() == sat:
+                best_model, best_val = s.model(), k
             s.pop()
-    sol=extract_solution(best_model,M,W,P)
-    total_elapsed=seconds_since(t0)
+    sol = extract_solution(best_model, M, W, P)
+    total_elapsed = seconds_since(t0)
     print(f"[Timing] Total optimisation time: {total_elapsed}s")
-    save_solution_json(n,'sat',total_elapsed,sol,optimise=True,obj_val=best_val)
+    save_solution_json(n, 'sat', total_elapsed, sol, optimise=True, obj_val=best_val)
     print(f"[RESULT] SMT | total_imbalance = {best_val}")
 
 # ----------------------------------------------------------------------------
 # CLI
 # ----------------------------------------------------------------------------
-parser=argparse.ArgumentParser(description="SMT (Z3) solver for Sports Tournament Scheduling – decision & optimisation")
-parser.add_argument("N",type=int,nargs="?",help="even number of teams")
-parser.add_argument("-a","--automatic",action="store_true",help="solve N=4,6,...,14 in batch")
-parser.add_argument("-o","--optimise",action="store_true",help="minimise total home-away imbalance")
-parser.add_argument("--export-smt2",action="store_true",help="export SMT-LIB2 file n{N}.smt2")
-parser.add_argument("--no-sb",action="store_true",help="disable row/column symmetry breaking")
-args=parser.parse_args()
+parser = argparse.ArgumentParser(
+    description="SMT (Z3) solver for Sports Tournament Scheduling – decision & optimisation"
+)
+parser.add_argument("N", type=int, nargs="?", help="even number of teams")
+parser.add_argument("-a", "--automatic", action="store_true",
+                    help="solve N=4,6,...,14 in batch")
+parser.add_argument("-o", "--optimise", action="store_true",
+                    help="minimise total home-away imbalance")
+parser.add_argument("--export-smt2", action="store_true",
+                    help="export SMT-LIB2 file n{N}.smt2")
+parser.add_argument("--no-sb", action="store_true",
+                    help="disable row/column symmetry breaking")
+args = parser.parse_args()
+
 if args.automatic:
-    for n in range(4,15,2): solve_instance(n,args,optimise=args.optimise)
+    for n in range(4,15,2):
+        solve_instance(n, args, optimise=args.optimise)
 else:
-    (solve_instance(args.N,args,optimise=args.optimise) if args.N else parser.error("Positional N required unless -a is used."))
+    if not args.N:
+        parser.error("Positional N required unless -a is used.")
+    solve_instance(args.N, args, optimise=args.optimise)

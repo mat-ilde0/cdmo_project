@@ -2162,7 +2162,7 @@
                 ]
             ]
         ],
-        "time": 11,
+        "time": 12,
         "optimal": true,
         "obj": 10.0
     },
@@ -2950,7 +2950,7 @@
                 ]
             ]
         ],
-        "time": 11,
+        "time": 12,
         "optimal": true,
         "obj": 10.0
     },
@@ -3541,7 +3541,7 @@
                 ]
             ]
         ],
-        "time": 8,
+        "time": 9,
         "optimal": true,
         "obj": "None"
     },
@@ -4132,7 +4132,7 @@
                 ]
             ]
         ],
-        "time": 3,
+        "time": 4,
         "optimal": true,
         "obj": 10.0
     },
