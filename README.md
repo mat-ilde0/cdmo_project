@@ -16,25 +16,33 @@ Once cloned the repo follow the following steps:
 ### Run all models on all instances automatically
 From inside a bash in the docker container run the command `source/run_all.sh`
 
-### Run a CP model in the container
-1. Open a terminal in the root folder of the project and run the container
-2. Access to a bash inside it
-3. `` where N is the instance number
-
 ### Run a CP model in the container  
 1. Open a terminal in the root folder of the project and run the container  
 2. Access a bash inside it  
-3. Run the following command inside the container:  
-   ```bash
-   python source/CP/CP_STS.py -n <N> [--opt] [--heuristics] [--solver {chuffed,gecode,ortools}] [--no-symmetry-breaking]
-   ```
+3. Run the CP model inside the container:
 
-   Where:
-   - `<N>` is the number of teams (must be **even**)
-   - `--opt`: run the optimization version (default: **disabled**)
-   - `--heuristics`: use first-fail variable selection (default: **disabled**)
-   - `--solver`: solver to use (default: **chuffed** for satisfaction, **ortools** for optimization)
-   - `--no-symmetry-breaking`: disable symmetry breaking constraints (default: **enabled**)
+   - **Single instance**  
+     ```bash
+     python3 source/CP/CP_STS.py \
+       -n <N> \
+       [--opt] \
+       [--heuristics] \
+       [--solver {chuffed|gecode|ortools}] \
+       [--no-symmetry-breaking]
+     ```
+     Where:
+     - `-n <N>`: number of teams (must be **even**).
+     - `--opt`: enable optimization mode (default: off).
+     - `--heuristics`: use first-fail variable selection (default: off).
+     - `--solver {…}`: choose solver (`chuffed`, `gecode` or `ortools`; default: `chuffed` for SAT, `ortools` for OPT).
+     - `--no-symmetry-breaking`: disable symmetry-breaking constraints (default: enabled).
+
+   - **Batch mode**  
+     ```bash
+     python3 source/CP/CP_STS.py --a [--opt] [--heuristics] [--solver {chuffed|gecode|ortools}] [--no-symmetry-breaking]
+     ```
+     Where:
+     - `--a`: run **all** instances automatically for N = 4, 6, 8, …, 14 (instead of a single `-n <N>`).
 
 
 ### Run MIP model in the container
